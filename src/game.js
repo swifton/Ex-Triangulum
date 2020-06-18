@@ -1,24 +1,26 @@
-function polygon() {
-    this.vertices = [];
-    this.edges = [];
+function edge(v1, v2, polygon) {
+	this.v1 = v1;
+	this.v2 = v2;
+	this.polygon1 = polygon;
+	this.polygon2 = undefined;
 }
 
-function regular_polygon(n_sides) {
-    var result = new polygon();
-    
-    for (var vertex_i = 0; vertex_i < n_sides; vertex_i += 1) {
-        
-    }
+function Polygon(vertices) {
+	this.vertices = vertices;
+	this.edges = [];
+
+	for (var vx_i = 0; vx_i < vertices.length; vx_i += 1) {
+		this.edges.push(new edge(vertices[vx_i], vertices[(vx_i + 1) % vertices.length], this));
+	}
 }
 
 realtime = true;
 var unit_pix = 50;
 var canvas_center = [0, 0];
-var field;
-var all_edges = [];
-var closed_edges = [];
+var polygons;
 var open_edges = [];
 var vertices = [];
+
 var colors = ["red", "green", "blue", "yellow", "magenta", "cyan"];
 var types = [3, 4, 6, 8];
 
@@ -33,13 +35,10 @@ var scale = 1;
 function step() {
 	resize_canvas();
 	clear_canvas();
-	game_update();
-	game_render();
+	render();
 }
 
-function game_update() {}
-
-function game_render() {
+function render() {
 	// Hadndling canvas panning (operated by dragging the mouse).
 	canvas_center[0] = main_canvas.width / 2 + pan_offset_x + old_pan_offset_x;
 	canvas_center[1] = main_canvas.height / 2 + pan_offset_y + old_pan_offset_y;
@@ -55,19 +54,19 @@ function game_render() {
 	main_context.fillStyle = "green";
 
 	// Drawing polygons
-	for (var polygon_i = 0; polygon_i < field.length; polygon_i += 1) {
-		polygon = field[polygon_i];
+	for (var polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+		polygon = polygons[polygon_i];
 
 		main_context.beginPath();
 
 		// Move to the last vertex of the polygon
-		var last_vx = polygon[polygon.length - 1];
+		var last_vx = polygon.vertices[polygon.vertices.length - 1];
 		var last_vx_canvas = world_to_canvas(last_vx);
 		context.moveTo(last_vx_canvas[0], last_vx_canvas[1]);
 
-		// Looping over edges, drawing each.
-		for (var vx_i = 0; vx_i < polygon.length; vx_i += 1) {
-			var vx_c = world_to_canvas(polygon[vx_i]);
+		// Looping over vertices, drawing the edge to each vertex.
+		for (var vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
+			var vx_c = world_to_canvas(polygon.vertices[vx_i]);
 			context.lineTo(vx_c[0], vx_c[1]);
 		}
 
@@ -82,8 +81,8 @@ function game_render() {
 	main_context.beginPath();
 	for (var edge_i = 0; edge_i < open_edges.length; edge_i += 1) {
 		var edge = open_edges[edge_i];
-		var vx_1c = world_to_canvas([edge[0], edge[1]]);
-		var vx_2c = world_to_canvas([edge[2], edge[3]]);
+		var vx_1c = world_to_canvas(edge.v1);
+		var vx_2c = world_to_canvas(edge.v2);
 				
 		context.moveTo(vx_1c[0], vx_1c[1]);
 		context.lineTo(vx_2c[0], vx_2c[1]);
@@ -100,34 +99,27 @@ function world_to_canvas(world_point) {
 }
 
 function create_foam() {
-	field = [[[0, 0], [0, 1], [1, 1], [1, 0]]]
-        open_edges = [[0, 0, 0, 1], [0, 1, 1, 1], [1, 1, 1, 0], [1, 0, 0, 0]];
+	var first_polygon = new Polygon([[0, 0], [0, 1], [1, 1], [1, 0]]);
+	polygons = [first_polygon];
+	
+	open_edges = [];
+	for (var edge_i = 0; edge_i < first_polygon.edges.length; edge_i += 1) {
+		open_edges.push(first_polygon.edges[edge_i]);
+	}
+
 	vertices = [[0, 0, 18], [0, 1, 18], [1, 1, 18], [1, 0, 18]];
 	
 	for (var polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
-		// var bud_i = random_integer(0, field.length);
 		var edge_i = random_integer(0, open_edges.length);
 		add_polygon(open_edges[edge_i], types[random_integer(0, types.length)]);
 	}
-	
-	//add_polygon(get_edge(0, 0), 8);
-	//add_polygon(get_edge(0, 1), 8);
-	//add_polygon(get_edge(0, 2), 8);
-	//add_polygon(get_edge(0, 3), 8);
-}
-
-function get_edge(bud_i, edge_i) {
-	var bud = field[bud_i];
-	var n = bud.length;
-	return [bud[(edge_i) % n][0], bud[(edge_i) % n][1], bud[(edge_i + 1) % n][0], bud[(edge_i + 1) % n][1]]
 }
 
 function add_polygon(edge, type) {
-	edges_to_close = [edge];
-	var old_edge = [edge[0] - edge[2], edge[1] - edge[3]];
-	var polygon = [[edge[2], edge[3]], [edge[0], edge[1]]];
+	var old_edge = [edge.v1[0] - edge.v2[0], edge.v1[1] - edge.v2[1]];
+	var polygon_vertices = [[edge.v2[0], edge.v2[1]], [edge.v1[0], edge.v1[1]]];
 	var angle = Math.PI * (1 - (type - 2) / type);
-	var vx = [edge[0], edge[1]];
+	var vx = edge.v1;
 	var angle_15 = 12 * (type - 2) / type;
 	
 	if (!add_to_vertex(vx, angle_15)) return;
@@ -145,22 +137,14 @@ function add_polygon(edge, type) {
 		
 		var new_vx = [vx[0] + new_edge[0], vx[1] + new_edge[1]];
 		
-		polygon.push(new_vx);
-		
-		edges_to_close.push([vx[0], vx[1], new_vx[0], new_vx[1]]);
-		
-		for (var edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
-			if (segments_intersect(open_edges[edg_i], [vx[0], vx[1], new_vx[0], new_vx[1]])) return;
-		}
+		polygon_vertices.push(new_vx);
 		
 		vx = new_vx;
 		old_edge = new_edge;
 	}
-	
-	edges_to_close.push([vx[0], vx[1], edge[2], edge[3]])
-	
-        for (var vx_i = 0; vx_i < polygon.length; vx_i += 1) {
-		var vx = polygon[vx_i];
+
+    for (var vx_i = 0; vx_i < polygon_vertices.length; vx_i += 1) {
+		var vx = polygon_vertices[vx_i];
 		
 		for (var v_i = 0; v_i < vertices.length; v_i += 1) {
 			if (same_vertex(vx, vertices[v_i])) {
@@ -173,8 +157,8 @@ function add_polygon(edge, type) {
 	
 	var found;
 	
-	for (var vx_i = 0; vx_i < polygon.length; vx_i += 1) {
-		var vx = polygon[vx_i];
+	for (var vx_i = 0; vx_i < polygon_vertices.length; vx_i += 1) {
+		var vx = polygon_vertices[vx_i];
 		found = false;
 		
 		for (var v_i = 0; v_i < vertices.length; v_i += 1) {
@@ -187,17 +171,25 @@ function add_polygon(edge, type) {
 		if (!found) vertices.push([vx[0], vx[1], 24 - angle_15]);
 	}
 	
+	var new_polygon = new Polygon(polygon_vertices);
+
+	for (var edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
+		for (var edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
+			if (edges_intersect(open_edges[edg_i], new_polygon.edges[edge_i])) return;
+		}
+	}
+
+	for (var edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
+		check_close_edge(new_polygon.edges[edge_i]);
+	}
 	
-	for (var e_i = 0; e_i < edges_to_close.length; e_i += 1) check_close_edge(edges_to_close[e_i]);
-    
-	field.push(polygon);
+	polygons.push(new_polygon);
 }
 
 function check_close_edge(edge_to_check) {
 	var to_push = true;
 	for (var edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
 		if (same_edge(edge_to_check, open_edges[edg_i])) {
-			//closed_edges.push(edge_to_check);
 			open_edges.remove(edg_i);
 			to_push = false;
 		}
@@ -228,31 +220,37 @@ function same_vertex(vertex_1, vertex_2) {
 	return false;
 }
 
+// The Manhattan distance between two points.
+function manhattan(pt1, pt2) {
+	return Math.abs(pt1[0] - pt2[0]) + Math.abs(pt1[1] - pt2[1]);
+}
+
 function same_edge(edge_1, edge_2) {
 	var threshold = 0.1;
-	if (Math.abs(edge_1[0] - edge_2[0]) < threshold && Math.abs(edge_1[1] - edge_2[1]) < threshold && Math.abs(edge_1[2] - edge_2[2]) < threshold && Math.abs(edge_1[3] - edge_2[3]) < threshold) return true;
-	if (Math.abs(edge_1[2] - edge_2[0]) < threshold && Math.abs(edge_1[1] - edge_2[3]) < threshold && Math.abs(edge_1[0] - edge_2[2]) < threshold && Math.abs(edge_1[3] - edge_2[1]) < threshold) return true;
+	
+	if (manhattan(edge_1.v1, edge_2.v1) < threshold && manhattan(edge_1.v2, edge_2.v2) < threshold) return true;
+	if (manhattan(edge_1.v1, edge_2.v2) < threshold && manhattan(edge_1.v2, edge_2.v1) < threshold) return true;
 	return false;
 }
 
-function segments_intersect(line1, line2) {
-    x1 = line1[0]
-        y1 = line1[1]
-        x2 = line1[2]
-        y2 = line1[3]
+function edges_intersect(edge_1, edge_2) {
+    x1 = edge_1.v1[0];
+    y1 = edge_1.v1[1];
+    x2 = edge_1.v2[0];
+    y2 = edge_1.v2[1];
     
-        x3 = line2[0]
-        y3 = line2[1]
-        x4 = line2[2]
-        y4 = line2[3]
-    
-        side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1)
-        side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1)
-    
-        side3 = (x1 - x3) * (y3 - y4) - (x3 - x4) * (y1 - y3)
-        side4 = (x2 - x3) * (y3 - y4) - (x3 - x4) * (y2 - y3)
-    
-        return side1 * side2 < 0 && side3 * side4 < 0
+    x3 = edge_2.v1[0];
+    y3 = edge_2.v1[1];
+    x4 = edge_2.v2[0];
+    y4 = edge_2.v2[1];
+
+    side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1);
+    side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1);
+
+    side3 = (x1 - x3) * (y3 - y4) - (x3 - x4) * (y1 - y3);
+    side4 = (x2 - x3) * (y3 - y4) - (x3 - x4) * (y2 - y3);
+
+    return side1 * side2 < 0 && side3 * side4 < 0;
 }
 
 function mouse_down(x, y) {
