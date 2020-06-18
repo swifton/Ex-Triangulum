@@ -40,52 +40,63 @@ function step() {
 function game_update() {}
 
 function game_render() {
+	// Hadndling canvas panning (operated by dragging the mouse).
 	canvas_center[0] = main_canvas.width / 2 + pan_offset_x + old_pan_offset_x;
 	canvas_center[1] = main_canvas.height / 2 + pan_offset_y + old_pan_offset_y;
     
+	// Setting up canvas parameters that pertain to all drawing.
     main_context.save();
     main_context.scale(scale, scale);
+	main_context.globalAlpha = 1;
+	main_context.lineWidth = 2;
 	
+	// Preparing the canvas for drawing polygons
+	main_context.strokeStyle = "black";
+	main_context.fillStyle = "green";
+
+	// Drawing polygons
 	for (var polygon_i = 0; polygon_i < field.length; polygon_i += 1) {
-		draw_polygon(field[polygon_i]);
+		polygon = field[polygon_i];
+
+		main_context.beginPath();
+
+		// Move to the last vertex of the polygon
+		var last_vx = polygon[polygon.length - 1];
+		var last_vx_canvas = world_to_canvas(last_vx);
+		context.moveTo(last_vx_canvas[0], last_vx_canvas[1]);
+
+		// Looping over edges, drawing each.
+		for (var vx_i = 0; vx_i < polygon.length; vx_i += 1) {
+			var vx_c = world_to_canvas(polygon[vx_i]);
+			context.lineTo(vx_c[0], vx_c[1]);
+		}
+
+		main_context.fill();
+		main_context.stroke();
 	}
 	
-	center_x = canvas_center[0];
-	center_y = canvas_center[1];
+	// Preparing the canvas for drawing open edges
+	main_context.strokeStyle = "red";
+
+	// Drawing open edges
+	main_context.beginPath();
 	for (var edge_i = 0; edge_i < open_edges.length; edge_i += 1) {
 		var edge = open_edges[edge_i];
-		draw_line(center_x + unit_pix * edge[0], center_y + unit_pix * edge[1], center_x + unit_pix * edge[2], center_y + unit_pix * edge[3], "red");
+		var vx_1c = world_to_canvas([edge[0], edge[1]]);
+		var vx_2c = world_to_canvas([edge[2], edge[3]]);
+				
+		context.moveTo(vx_1c[0], vx_1c[1]);
+		context.lineTo(vx_2c[0], vx_2c[1]);
 	}
+	main_context.stroke();
 	
     main_context.restore();
 }
 
 function world_to_canvas(world_point) {
-	cx = world_point[0] * unit_pix + canvas_center[0];
-	cy = world_point[1] * unit_pix + canvas_center[1];
+	var cx = world_point[0] * unit_pix + canvas_center[0];
+	var cy = world_point[1] * unit_pix + canvas_center[1];
 	return [cx, cy];
-}
-
-function draw_polygon(polygon) {
-	main_context.globalAlpha = 1;
-	main_context.lineWidth = 2;
-	main_context.strokeStyle = "black";
-	main_context.fillStyle = "green";
-	main_context.beginPath();
-
-	// Move to the last vertex of the polygon
-	last_vx = polygon[polygon.length - 1];
-	last_vx_canvas = world_to_canvas(last_vx);
-	context.moveTo(last_vx_canvas[0], last_vx_canvas[1]);
-
-	// Looping over edges, drawing each.
-	for (var vx_i = 0; vx_i < polygon.length; vx_i += 1) {
-		vx_c = world_to_canvas(polygon[vx_i]);
-		context.lineTo(vx_c[0], vx_c[1]);
-	}
-
-	main_context.fill();
-	main_context.stroke();
 }
 
 function create_foam() {
