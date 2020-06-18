@@ -13,6 +13,7 @@ function regular_polygon(n_sides) {
 
 realtime = true;
 var unit_pix = 50;
+var canvas_center = [0, 0];
 var field;
 var all_edges = [];
 var closed_edges = [];
@@ -39,16 +40,18 @@ function step() {
 function game_update() {}
 
 function game_render() {
-	var center_x = main_canvas.width / 2 + pan_offset_x + old_pan_offset_x;
-	var center_y = main_canvas.height / 2 + pan_offset_y + old_pan_offset_y;
+	canvas_center[0] = main_canvas.width / 2 + pan_offset_x + old_pan_offset_x;
+	canvas_center[1] = main_canvas.height / 2 + pan_offset_y + old_pan_offset_y;
     
     main_context.save();
     main_context.scale(scale, scale);
 	
 	for (var polygon_i = 0; polygon_i < field.length; polygon_i += 1) {
-		draw_polygon(field[polygon_i], [center_x, center_y]);
+		draw_polygon(field[polygon_i]);
 	}
 	
+	center_x = canvas_center[0];
+	center_y = canvas_center[1];
 	for (var edge_i = 0; edge_i < open_edges.length; edge_i += 1) {
 		var edge = open_edges[edge_i];
 		draw_line(center_x + unit_pix * edge[0], center_y + unit_pix * edge[1], center_x + unit_pix * edge[2], center_y + unit_pix * edge[3], "red");
@@ -57,8 +60,13 @@ function game_render() {
     main_context.restore();
 }
 
-// Center is the point on the canvas where the world point (0, 0) should be.
-function draw_polygon(polygon, center) {
+function world_to_canvas(world_point) {
+	cx = world_point[0] * unit_pix + canvas_center[0];
+	cy = world_point[1] * unit_pix + canvas_center[1];
+	return [cx, cy];
+}
+
+function draw_polygon(polygon) {
 	main_context.globalAlpha = 1;
 	main_context.lineWidth = 2;
 	main_context.strokeStyle = "black";
@@ -67,18 +75,11 @@ function draw_polygon(polygon, center) {
 
 	// Looping over edges, drawing each.
 	for (var vx_i = 0; vx_i < polygon.length; vx_i += 1) {
-		// World coordinates of the vertices incident to the edge.
-		vx_1_w = polygon[vx_i];
-		vx_2_w = polygon[(vx_i + 1) % polygon.length];
-
-		// Canvas coordinates.
-		vx_1_c_x = vx_1_w[0] * unit_pix + center[0];
-		vx_1_c_y = vx_1_w[1] * unit_pix + center[1];
-		vx_2_c_x = vx_2_w[0] * unit_pix + center[0];
-		vx_2_c_y = vx_2_w[1] * unit_pix + center[1];
+		vx_1 = world_to_canvas(polygon[vx_i]);
+		vx_2 = world_to_canvas(polygon[(vx_i + 1) % polygon.length]);
 			
-		if (vx_i == 0) context.moveTo(vx_1_c_x, vx_1_c_y);
-		context.lineTo(vx_2_c_x, vx_2_c_y);
+		if (vx_i == 0) context.moveTo(vx_1[0], vx_1[1]);
+		context.lineTo(vx_2[0], vx_2[1]);
 	}
 
 	main_context.fill();
