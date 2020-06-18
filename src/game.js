@@ -54,16 +54,17 @@ function game_render() {
 		draw_line(center_x + unit_pix * edge[0], center_y + unit_pix * edge[1], center_x + unit_pix * edge[2], center_y + unit_pix * edge[3], "red");
 	}
 	
-	for (var vx_i = 0; vx_i < vertices.length; vx_i += 1) {
-		var vx = vertices[vx_i];
-		//draw_label(vx[2], center_x + unit_pix * vx[0], center_y + unit_pix * vx[1]);
-	}
-    
     main_context.restore();
 }
 
 // Center is the point on the canvas where the world point (0, 0) should be.
 function draw_polygon(polygon, center) {
+	main_context.globalAlpha = 1;
+	main_context.lineWidth = 2;
+	main_context.strokeStyle = "black";
+	main_context.fillStyle = "green";
+	main_context.beginPath();
+
 	// Looping over edges, drawing each.
 	for (var vx_i = 0; vx_i < polygon.length; vx_i += 1) {
 		// World coordinates of the vertices incident to the edge.
@@ -75,9 +76,13 @@ function draw_polygon(polygon, center) {
 		vx_1_c_y = vx_1_w[1] * unit_pix + center[1];
 		vx_2_c_x = vx_2_w[0] * unit_pix + center[0];
 		vx_2_c_y = vx_2_w[1] * unit_pix + center[1];
-		
-		draw_line(vx_1_c_x, vx_1_c_y, vx_2_c_x, vx_2_c_y);
+			
+		if (vx_i == 0) context.moveTo(vx_1_c_x, vx_1_c_y);
+		context.lineTo(vx_2_c_x, vx_2_c_y);
 	}
+
+	main_context.fill();
+	main_context.stroke();
 }
 
 function create_foam() {
