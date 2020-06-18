@@ -1,13 +1,3 @@
-/*
-What I want to try:
-Creating polygons by closing gaps. 
-How many different polygons can you create from a given set of polygons.
-Finish the foam by hand. 
-Display angles (colors?)
-Display lengths (colors?)
-Save foams.
-*/
-
 function polygon() {
     this.vertices = [];
     this.edges = [];
@@ -19,12 +9,7 @@ function regular_polygon(n_sides) {
     for (var vertex_i = 0; vertex_i < n_sides; vertex_i += 1) {
         
     }
-    
-    
 }
-
-var etalon_square = new regular_polygon(4);
-
 
 realtime = true;
 var unit_pix = 50;
@@ -77,12 +62,22 @@ function game_render() {
     main_context.restore();
 }
 
+// Center is the point on the canvas where the world point (0, 0) should be.
 function draw_polygon(polygon, center) {
-	for (var vx_i = 0; vx_i < polygon.length - 1; vx_i += 1) {
-		draw_line(center[0] + unit_pix * polygon[vx_i][0], center[1] + unit_pix * polygon[vx_i][1], center[0] + unit_pix * polygon[vx_i + 1][0], center[1] + unit_pix * polygon[vx_i + 1][1]); //, colors[vx_i]);
+	// Looping over edges, drawing each.
+	for (var vx_i = 0; vx_i < polygon.length; vx_i += 1) {
+		// World coordinates of the vertices incident to the edge.
+		vx_1_w = polygon[vx_i];
+		vx_2_w = polygon[(vx_i + 1) % polygon.length];
+
+		// Canvas coordinates.
+		vx_1_c_x = vx_1_w[0] * unit_pix + center[0];
+		vx_1_c_y = vx_1_w[1] * unit_pix + center[1];
+		vx_2_c_x = vx_2_w[0] * unit_pix + center[0];
+		vx_2_c_y = vx_2_w[1] * unit_pix + center[1];
+		
+		draw_line(vx_1_c_x, vx_1_c_y, vx_2_c_x, vx_2_c_y);
 	}
-	
-	draw_line(center[0] + unit_pix * polygon[0][0], center[1] + unit_pix * polygon[0][1], center[0] + unit_pix * polygon[polygon.length - 1][0], center[1] + unit_pix * polygon[polygon.length - 1][1]);
 }
 
 function create_foam() {
