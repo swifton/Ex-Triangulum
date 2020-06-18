@@ -27,6 +27,11 @@ function Polygon(vertices) {
 	}
 }
 
+function Vertex(v, angle) {
+	this.v = v;
+	this.angle = angle; // The multiple of 15 degrees
+}
+
 realtime = true;
 var unit_pix = 50;
 var canvas_center = [0, 0];
@@ -135,7 +140,7 @@ function create_foam() {
 
 	last_edge = first_polygon.edges[0];
 
-	vertices = [[0, 0, 18], [0, 1, 18], [1, 1, 18], [1, 0, 18]];
+	vertices = [new Vertex(new vector(0, 0), 18), new Vertex(new vector(0, 1), 18), new Vertex(new vector(1, 1), 18), new Vertex(new vector(1, 0), 18)];
 	
 	for (var polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
 		var edge_i = random_integer(0, open_edges.length);
@@ -169,8 +174,8 @@ function add_polygon(edge, type) {
 		var vx = polygon_vertices[vx_i];
 		
 		for (var v_i = 0; v_i < vertices.length; v_i += 1) {
-			if (same_vertex(vx, new vector(vertices[v_i][0], vertices[v_i][1]))) {
-				if (vertices[v_i][2] - angle_15 < -0.01) {
+			if (same_vertex(vx, vertices[v_i].v)) {
+				if (vertices[v_i].angle - angle_15 < -0.01) {
 					return;
 				}
 			}
@@ -184,13 +189,13 @@ function add_polygon(edge, type) {
 		found = false;
 		
 		for (var v_i = 0; v_i < vertices.length; v_i += 1) {
-			if (same_vertex(vx, new vector(vertices[v_i][0], vertices[v_i][1]))) {
+			if (same_vertex(vx, vertices[v_i].v)) {
 				vertices[v_i][2] -= angle_15;
 				found = true
 			}
 		}
 		
-		if (!found) vertices.push([vx.x, vx.y, 24 - angle_15]);
+		if (!found) vertices.push(new Vertex(new vector(vx.x, vx.y), 24 - angle_15));
 	}
 	
 	var new_polygon = new Polygon(polygon_vertices);
@@ -222,18 +227,17 @@ function check_close_edge(edge_to_check) {
 
 function add_to_vertex(vertex, angle_mul_15) {
 	for (var vx_i = 0; vx_i < vertices.length; vx_i += 1) {
-		if (same_vertex(vertex, new vector(vertices[vx_i][0], vertices[vx_i][1]))) {
-			vertices[vx_i][2] -= angle_mul_15;
-			if (vertices[vx_i][2] < -0.01) {
-				vertices[vx_i][2] += angle_mul_15;
+		if (same_vertex(vertex, vertices[vx_i].v)) {
+			if (vertices[vx_i].angle - angle_mul_15 < -0.01) {
 				return false;
 			}
-			else return true;
-			
+
+			vertices[vx_i].angle -= angle_mul_15;
+			return true;
 		}
 	}
 	
-	vertices.push([vertex.x, vertex.y, 24 - angle_mul_15]);
+	vertices.push(new Vertex(new vector(vertex.x, vertex.y), 24 - angle_mul_15));
 	return true;
 }
 
