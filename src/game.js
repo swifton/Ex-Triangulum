@@ -73,13 +73,15 @@ function draw_polygon(polygon) {
 	main_context.fillStyle = "green";
 	main_context.beginPath();
 
+	// Move to the last vertex of the polygon
+	last_vx = polygon[polygon.length - 1];
+	last_vx_canvas = world_to_canvas(last_vx);
+	context.moveTo(last_vx_canvas[0], last_vx_canvas[1]);
+
 	// Looping over edges, drawing each.
 	for (var vx_i = 0; vx_i < polygon.length; vx_i += 1) {
-		vx_1 = world_to_canvas(polygon[vx_i]);
-		vx_2 = world_to_canvas(polygon[(vx_i + 1) % polygon.length]);
-			
-		if (vx_i == 0) context.moveTo(vx_1[0], vx_1[1]);
-		context.lineTo(vx_2[0], vx_2[1]);
+		vx_c = world_to_canvas(polygon[vx_i]);
+		context.lineTo(vx_c[0], vx_c[1]);
 	}
 
 	main_context.fill();
@@ -153,7 +155,7 @@ function add_polygon(edge, type) {
 			if (same_vertex(vx, vertices[v_i])) {
 				if (vertices[v_i][2] - angle_15 < 0) {
 					return;
-				}			
+				}
 			}
 		}
 	}
@@ -168,7 +170,7 @@ function add_polygon(edge, type) {
 			if (same_vertex(vx, vertices[v_i])) {
 				vertices[v_i][2] -= angle_15;
 				found = true
-			}			
+			}
 		}
 		
 		if (!found) vertices.push([vx[0], vx[1], 24 - angle_15]);
