@@ -45,6 +45,8 @@ var old_pan_offset_x = 0;
 var old_pan_offset_y = 0;
 var scale = 1;
 
+var last_edge;
+
 function step() {
 	resize_canvas();
 	clear_canvas();
@@ -102,6 +104,17 @@ function render() {
 	}
 	main_context.stroke();
 	
+	// Drawing the last edge for debugging purposes
+	main_context.strokeStyle = "blue";
+
+	main_context.beginPath();
+	var vx_1c = world_to_canvas(last_edge.v1);
+	var vx_2c = world_to_canvas(last_edge.v2);
+				
+	context.moveTo(vx_1c[0], vx_1c[1]);
+	context.lineTo(vx_2c[0], vx_2c[1]);
+	main_context.stroke();
+	
     main_context.restore();
 }
 
@@ -120,10 +133,13 @@ function create_foam() {
 		open_edges.push(first_polygon.edges[edge_i]);
 	}
 
+	last_edge = first_polygon.edges[0];
+
 	vertices = [[0, 0, 18], [0, 1, 18], [1, 1, 18], [1, 0, 18]];
 	
 	for (var polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
 		var edge_i = random_integer(0, open_edges.length);
+		last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
 		add_polygon(open_edges[edge_i], types[random_integer(0, types.length)]);
 	}
 }
@@ -282,6 +298,7 @@ function mouse_move(x, y) {
 
 function space_down() {
 	var edge_i = random_integer(0, open_edges.length);
+	last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
 	add_polygon(open_edges[edge_i], types[random_integer(0, types.length)]);
 }
 
