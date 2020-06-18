@@ -1,0 +1,1 @@
+tsc canvas.ts game.ts input.ts loop.ts utils.ts & del build\* /Q & move *.js build

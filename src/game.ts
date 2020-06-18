@@ -32,7 +32,6 @@ function Vertex(v, angle) {
 	this.angle = angle; // The multiple of 15 degrees
 }
 
-realtime = true;
 var unit_pix = 50;
 var canvas_center = [0, 0];
 var polygons;
@@ -42,7 +41,6 @@ var vertices = [];
 var colors = ["red", "green", "blue", "yellow", "magenta", "cyan"];
 var types = [3, 4, 6, 8];
 
-var mouse_is_down;
 var mouse_down_pos;
 var pan_offset_x = 0;
 var pan_offset_y = 0;
@@ -75,19 +73,19 @@ function render() {
 
 	// Drawing polygons
 	for (var polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
-		polygon = polygons[polygon_i];
+		var polygon = polygons[polygon_i];
 
 		main_context.beginPath();
 
 		// Move to the last vertex of the polygon
 		var last_vx = polygon.vertices[polygon.vertices.length - 1];
 		var last_vx_canvas = world_to_canvas(last_vx);
-		context.moveTo(last_vx_canvas[0], last_vx_canvas[1]);
+		main_context.moveTo(last_vx_canvas[0], last_vx_canvas[1]);
 
 		// Looping over vertices, drawing the edge to each vertex.
 		for (var vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
 			var vx_c = world_to_canvas(polygon.vertices[vx_i]);
-			context.lineTo(vx_c[0], vx_c[1]);
+			main_context.lineTo(vx_c[0], vx_c[1]);
 		}
 
 		main_context.fill();
@@ -104,8 +102,8 @@ function render() {
 		var vx_1c = world_to_canvas(edge.v1);
 		var vx_2c = world_to_canvas(edge.v2);
 				
-		context.moveTo(vx_1c[0], vx_1c[1]);
-		context.lineTo(vx_2c[0], vx_2c[1]);
+		main_context.moveTo(vx_1c[0], vx_1c[1]);
+		main_context.lineTo(vx_2c[0], vx_2c[1]);
 	}
 	main_context.stroke();
 	
@@ -116,8 +114,8 @@ function render() {
 	var vx_1c = world_to_canvas(last_edge.v1);
 	var vx_2c = world_to_canvas(last_edge.v2);
 				
-	context.moveTo(vx_1c[0], vx_1c[1]);
-	context.lineTo(vx_2c[0], vx_2c[1]);
+	main_context.moveTo(vx_1c[0], vx_1c[1]);
+	main_context.lineTo(vx_2c[0], vx_2c[1]);
 	main_context.stroke();
 	
     main_context.restore();
@@ -134,7 +132,8 @@ function create_foam() {
 	polygons = [first_polygon];
 	
 	open_edges = [];
-	for (var edge_i = 0; edge_i < first_polygon.edges.length; edge_i += 1) {
+	var edge_i;
+	for (edge_i = 0; edge_i < first_polygon.edges.length; edge_i += 1) {
 		open_edges.push(first_polygon.edges[edge_i]);
 	}
 
@@ -143,7 +142,7 @@ function create_foam() {
 	vertices = [new Vertex(new vector(0, 0), 18), new Vertex(new vector(0, 1), 18), new Vertex(new vector(1, 1), 18), new Vertex(new vector(1, 0), 18)];
 	
 	for (var polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
-		var edge_i = random_integer(0, open_edges.length);
+		edge_i = random_integer(0, open_edges.length);
 		last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
 		add_polygon(open_edges[edge_i], types[random_integer(0, types.length)]);
 	}
@@ -261,21 +260,21 @@ function same_edge(edge_1, edge_2) {
 }
 
 function edges_intersect(edge_1, edge_2) {
-    x1 = edge_1.v1.x;
-    y1 = edge_1.v1.y;
-    x2 = edge_1.v2.x;
-    y2 = edge_1.v2.y;
+    var x1 = edge_1.v1.x;
+    var y1 = edge_1.v1.y;
+    var x2 = edge_1.v2.x;
+    var y2 = edge_1.v2.y;
     
-    x3 = edge_2.v1.x;
-    y3 = edge_2.v1.y;
-    x4 = edge_2.v2.x;
-    y4 = edge_2.v2.y;
+    var x3 = edge_2.v1.x;
+    var y3 = edge_2.v1.y;
+    var x4 = edge_2.v2.x;
+    var y4 = edge_2.v2.y;
 
-    side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1);
-    side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1);
+    var side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1);
+    var side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1);
 
-    side3 = (x1 - x3) * (y3 - y4) - (x3 - x4) * (y1 - y3);
-    side4 = (x2 - x3) * (y3 - y4) - (x3 - x4) * (y2 - y3);
+    var side3 = (x1 - x3) * (y3 - y4) - (x3 - x4) * (y1 - y3);
+    var side4 = (x2 - x3) * (y3 - y4) - (x3 - x4) * (y2 - y3);
 
     return side1 * side2 < 0 && side3 * side4 < 0;
 }

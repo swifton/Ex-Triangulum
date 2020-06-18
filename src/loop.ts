@@ -2,7 +2,7 @@ if (game_paused == undefined) var game_paused = false; // This clearly shouldn't
 
 function pause_game() {
   game_paused = !game_paused;
-  if (!game_paused) launch_game_loop();
+  // if (!game_paused) launch_game_loop();
 }
 
 function template_step() {
