@@ -3,6 +3,14 @@ function vector(x, y) {
 	this.y = y;
 }
 
+function mul(vec, scalar) {
+	return new vector(vec.x * scalar, vec.y * scalar);
+}
+
+function sum(vec_1, vec_2) {
+	return new vector(vec_1.x + vec_2.x, vec_1.y + vec_2.y);
+}
+
 function edge(v1, v2, polygon) {
 	this.v1 = v1;
 	this.v2 = v2;
@@ -122,7 +130,7 @@ function create_foam() {
 
 function add_polygon(edge, type) {
 	var old_edge = new vector(edge.v1.x - edge.v2.x, edge.v1.y - edge.v2.y);
-	var polygon_vertices = [new vector(edge.v2.x, edge.v2.y), new vector(edge.v1.x, edge.v1.y)];
+	var polygon_vertices = [edge.v2, edge.v1];
 	var angle = Math.PI * (1 - (type - 2) / type);
 	var vx = edge.v1;
 	var angle_15 = 12 * (type - 2) / type;
@@ -130,17 +138,10 @@ function add_polygon(edge, type) {
 	if (!add_to_vertex(vx, angle_15)) return;
 	
 	for (var edgee_i = 0; edgee_i < type - 2; edgee_i += 1) {
-		
-		var new_edge = new vector(0, 0);
+		var new_edge = mul(old_edge, Math.cos(angle));
 		var orth = new vector(old_edge.y, -old_edge.x);
-		
-		new_edge.x += Math.cos(angle) * old_edge.x;
-		new_edge.y += Math.cos(angle) * old_edge.y;
-		
-		new_edge.x += Math.sin(angle) * orth.x;
-		new_edge.y += Math.sin(angle) * orth.y;
-		
-		var new_vx = new vector(vx.x + new_edge.x, vx.y + new_edge.y);
+		new_edge = sum(new_edge, mul(orth, Math.sin(angle)))
+		var new_vx = sum(vx, new_edge);
 		
 		polygon_vertices.push(new_vx);
 		
