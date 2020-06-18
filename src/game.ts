@@ -217,7 +217,8 @@ function check_close_edge(edge_to_check) {
 	var to_push = true;
 	for (var edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
 		if (same_edge(edge_to_check, open_edges[edg_i])) {
-			open_edges.remove(edg_i);
+			open_edges.splice(edg_i, 1);
+			edg_i -= 1;
 			to_push = false;
 		}
 	}

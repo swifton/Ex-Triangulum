@@ -91,8 +91,8 @@ main_canvas.addEventListener('mouseup', function(e) {
                              if (typeof handle_input != "undefined") handle_input("mouseup", [mouse_pos.x, mouse_pos.y]);
                              }, false);
 
-window.addEventListener('mousewheel', function(event){
-                        var direction = Math.sign(event.wheelDeltaY);
+window.addEventListener('mousewheel', function(event: MouseWheelEvent){
+                        var direction = Math.sign(event.deltaY);
                         if (typeof mouse_scroll != "undefined") mouse_scroll(direction);
                         if (typeof handle_input != "undefined") handle_input("mousewheel", direction);
                         return false;
@@ -108,7 +108,6 @@ if (typeof lockable_pointer != "undefined" && lockable_pointer == true) main_can
 document.exitPointerLock = document.exitPointerLock || document.mozExitPointerLock;
 document.addEventListener('pointerlockchange', lock_change, false);
 document.addEventListener('mozpointerlockchange', lock_change, false);
-*/
 
 function lock_change() {
     if (document.pointerLockElement === main_canvas ||
@@ -118,3 +117,4 @@ function lock_change() {
         document.removeEventListener("mousemove", update_mouse_position, false);
     }
 }
+*/
