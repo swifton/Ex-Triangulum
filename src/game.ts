@@ -464,16 +464,22 @@ function mouse_up(x: number, y: number): void {
     }
 }
 
+// Tests whether the point is on a certain side of the edge. This function only makes
+// sense in the context of how polygons are constructed. 
+function point_is_on_inner_side(vertex1: Vector, vertex2: Vector, point: Vector): boolean {
+    let vec1: Vector = {x: vertex2.x - vertex1.x, y: vertex2.y - vertex1.y};
+    let vec2: Vector = {x: point.x - vertex1.x, y: point.y - vertex1.y};
+    
+    let determinant = vec1.x * vec2.y - vec1.y * vec2.x;
+    return determinant < 0;
+}
+
 function point_inside_polygon(point: Vector, polygon: Polygon): boolean {
 	for (let vertex_i = 0; vertex_i < polygon.vertices.length; vertex_i += 1) {
         let vertex = polygon.vertices[vertex_i];
         let next_vertex = polygon.vertices[(vertex_i + 1) % polygon.vertices.length];
         
-		let vec1: Vector = {x: next_vertex.x - vertex.x, y: next_vertex.y - vertex.y};
-		let vec2: Vector = {x: point.x - vertex.x, y: point.y - vertex.y};
-        
-		let determinant = vec1.x * vec2.y - vec1.y * vec2.x;
-		if (determinant > 0) return false;
+		if (!point_is_on_inner_side(vertex, next_vertex, point)) return false;
 	}
     
 	return true;
