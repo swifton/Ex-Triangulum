@@ -281,10 +281,21 @@ function create_foam() {
 }
 
 function add_polygon(edge: Edge, type: number): boolean {
-	let old_edge = {x: edge.v1.x - edge.v2.x, y: edge.v1.y - edge.v2.y};
-	let polygon_vertices = [edge.v2, edge.v1];
+    let starting_v1: Vector;
+    let starting_v2: Vector;
+    
+    if (edge.polygon2 == undefined) {
+        starting_v1 = edge.v1;
+        starting_v2 = edge.v2;
+    } else {
+        starting_v1 = edge.v2;
+        starting_v2 = edge.v1;
+    }
+    
+    let old_edge = {x: starting_v1.x - starting_v2.x, y: starting_v1.y - starting_v2.y};
+	let polygon_vertices = [starting_v2, starting_v1];
 	let angle = Math.PI * (1 - (type - 2) / type);
-	let vx = edge.v1;
+	let vx = starting_v1;
 	let angle_15 = 12 * (type - 2) / type;
 	
     // Constructing the vertices of the future polygon.
@@ -348,7 +359,8 @@ function add_polygon(edge: Edge, type: number): boolean {
         let found  = false;
         for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
             if (same_edge(edge_to_check, open_edges[edg_i])) {
-                open_edges[edg_i].polygon2 = new_polygon;
+                if (open_edges[edg_i].polygon2 == undefined) open_edges[edg_i].polygon2 = new_polygon;
+                else open_edges[edg_i].polygon1 = new_polygon;
                 new_polygon.edges[edge_i] = open_edges[edg_i];
                 open_edges.splice(edg_i, 1);
                 found = true;
