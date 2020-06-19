@@ -56,6 +56,8 @@ let scale: number = 1;
 
 let last_edge: Edge;
 
+let mouse_world_coord: Vector = {x: 0, y: 0};
+
 function step() {
 	resize_canvas();
 	clear_canvas();
@@ -123,8 +125,23 @@ function render() {
 	main_context.moveTo(vx_1c.x, vx_1c.y);
 	main_context.lineTo(vx_2c.x, vx_2c.y);
 	main_context.stroke();
+
+	// Visualizing the mouse position.
+	main_context.fillStyle = "red";
+	main_context.beginPath();
+	let mouse_canvas_coord = world_to_canvas(mouse_world_coord);
+	main_context.arc(mouse_canvas_coord.x, mouse_canvas_coord.y, 5, 0, 2 * Math.PI);
+	main_context.fill();
 	
     main_context.restore();
+
+
+}
+
+function canvas_to_world(canvas_point: Vector): Vector {
+	let wx: number = (canvas_point.x - canvas_center[0]) / unit_pix;
+	let wy: number = (canvas_point.y - canvas_center[1]) / unit_pix;
+	return {x: wx, y: wy};
 }
 
 function world_to_canvas(world_point: Vector): Vector {
@@ -304,6 +321,8 @@ function mouse_move(x: number, y: number): void {
         pan_offset_x = x - mouse_down_pos[0];
         pan_offset_y = y - mouse_down_pos[1];
     }
+	
+	mouse_world_coord = canvas_to_world({x: x, y: y});
 }
 
 function space_down(): void {
