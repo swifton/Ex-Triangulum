@@ -213,7 +213,7 @@ function create_foam() {
 	}
 }
 
-function add_polygon(edge: Edge, type: number): void {
+function add_polygon(edge: Edge, type: number): boolean {
 	let old_edge = {x: edge.v1.x - edge.v2.x, y: edge.v1.y - edge.v2.y};
 	let polygon_vertices = [edge.v2, edge.v1];
 	let angle = Math.PI * (1 - (type - 2) / type);
@@ -239,7 +239,7 @@ function add_polygon(edge: Edge, type: number): void {
 			if (same_vertex(vx, vertices[v_i].v)) {
 				if (vertices[v_i].angle - angle_15 < -0.01) {
                     console.log("Vertex " + v_i + " is full. " + vertices[v_i].angle * 15 + " degrees left, " + angle_15 * 15 + " needed.");
-					return;
+					return false;
 				}
 			}
 		}
@@ -251,7 +251,7 @@ function add_polygon(edge: Edge, type: number): void {
 		for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
 			if (edges_intersect(open_edges[edg_i], new_polygon.edges[edge_i])) {
                 console.log("Edge " + edg_i + " is in the way.");
-                return;
+                return false;
             }
 		}
 	}
@@ -276,7 +276,8 @@ function add_polygon(edge: Edge, type: number): void {
 	}
 	
 	polygons.push(new_polygon);
-	console.log("Success!")
+	console.log("Success!");
+    return true;
 }
 
 function check_close_edge(edge_to_check: Edge): void {
@@ -351,8 +352,10 @@ function mouse_down(x: number, y: number): void {
     mouse_is_down = true;
     mouse_down_pos = [x, y];
     
-    add_polygon(closest_edge, 3);
-    closest_edge = undefined;
+    if (closest_edge != undefined) {
+        let result = add_polygon(closest_edge, 3);
+        if (result) closest_edge = undefined;
+    }
 }
 
 function mouse_up(x: number, y: number): void {
