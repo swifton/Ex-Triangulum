@@ -465,14 +465,14 @@ function mouse_up(x: number, y: number): void {
 }
 
 function point_inside_polygon(point: Vector, polygon: Polygon): boolean {
-	for (let edge_i = 0; edge_i < polygon.edges.length; edge_i += 1) {
-		let edge = polygon.edges[edge_i];
+	for (let vertex_i = 0; vertex_i < polygon.vertices.length; vertex_i += 1) {
+        let vertex = polygon.vertices[vertex_i];
+        let next_vertex = polygon.vertices[(vertex_i + 1) % polygon.vertices.length];
         
-		let vec1: Vector = {x: edge.v2.x - edge.v1.x, y: edge.v2.y - edge.v1.y};
-		let vec2: Vector = {x: point.x - edge.v1.x, y: point.y - edge.v1.y};
+		let vec1: Vector = {x: next_vertex.x - vertex.x, y: next_vertex.y - vertex.y};
+		let vec2: Vector = {x: point.x - vertex.x, y: point.y - vertex.y};
         
 		let determinant = vec1.x * vec2.y - vec1.y * vec2.x;
-        if (edge.polygon2 == polygon) determinant *= -1;
 		if (determinant > 0) return false;
 	}
     
