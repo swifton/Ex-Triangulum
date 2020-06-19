@@ -1,12 +1,12 @@
 function update_mouse_position() {}
-function handle_input(arg1, arg2=undefined) {}
+function handle_input(arg1: string, arg2: any = undefined) {}
 
-var pressed_keys = {};
-var drag_start = {x: 0, y:0};
-var mouse_is_down = false;
+let pressed_keys: Record<number, boolean>;
+let drag_start = {x: 0, y:0};
+let mouse_is_down = false;
 
-function do_key_down(e) {
-    var i = e.keyCode;
+function do_key_down(e: KeyboardEvent) {
+    let i = e.keyCode;
     //console.log(i);
     pressed_keys[i] = true;
     
@@ -38,8 +38,8 @@ function do_key_down(e) {
 */
 }
 
-function do_key_up(e) {
-    var i = e.keyCode;
+function do_key_up(e: KeyboardEvent) {
+    let i = e.keyCode;
     pressed_keys[i] = false;
     
 /*
@@ -57,10 +57,10 @@ function do_key_up(e) {
 */
 }
 
-var mouse = {x: 0, y: 0};
+let mouse = {x: 0, y: 0};
 
-function get_mouse_pos(canvas, e) {
-    var rect = canvas.getBoundingClientRect();
+function get_mouse_pos(canvas: HTMLCanvasElement, e: MouseEvent) {
+    let rect = canvas.getBoundingClientRect();
     return {
         x: e.clientX - rect.left,
         y: e.clientY - rect.top
@@ -69,7 +69,7 @@ function get_mouse_pos(canvas, e) {
 
 main_canvas.addEventListener('mousemove', function(e){
                              mouse = get_mouse_pos(main_canvas, e);
-                             var mouse_pos = get_mouse_pos(main_canvas, e);
+                             let mouse_pos = get_mouse_pos(main_canvas, e);
                              if (typeof mouse_move != "undefined") mouse_move(mouse_pos.x, mouse_pos.y);
                              if (typeof handle_input != "undefined") handle_input("mousemove");
                              }, false);
@@ -77,7 +77,7 @@ main_canvas.addEventListener('mousemove', function(e){
 main_canvas.addEventListener('mousedown', function(e) {
                              mouse_is_down = true;
                              mouse = get_mouse_pos(main_canvas, e);
-                             var mouse_pos = get_mouse_pos(main_canvas, e);
+                             let mouse_pos = get_mouse_pos(main_canvas, e);
                              drag_start = {x: mouse_pos.x, y: mouse_pos.y};
                              if (typeof mouse_down != "undefined") mouse_down(mouse_pos.x, mouse_pos.y);
                              if (typeof handle_input != "undefined") handle_input("mousedown", [mouse_pos.x, mouse_pos.y]);
@@ -86,16 +86,17 @@ main_canvas.addEventListener('mousedown', function(e) {
 main_canvas.addEventListener('mouseup', function(e) {
                              mouse_is_down = false;
                              mouse = get_mouse_pos(main_canvas, e);
-                             var mouse_pos = get_mouse_pos(main_canvas, e);
+                             let mouse_pos = get_mouse_pos(main_canvas, e);
                              if (typeof mouse_up != "undefined") mouse_up(mouse_pos.x, mouse_pos.y);
                              if (typeof handle_input != "undefined") handle_input("mouseup", [mouse_pos.x, mouse_pos.y]);
                              }, false);
 
-window.addEventListener('mousewheel', function(event: MouseWheelEvent){
-                        var direction = Math.sign(event.deltaY);
+window.addEventListener('mousewheel', function(event: Event) {
+						let e = <MouseWheelEvent> event;
+                        let direction = Math.sign(e.deltaY);
                         if (typeof mouse_scroll != "undefined") mouse_scroll(direction);
                         if (typeof handle_input != "undefined") handle_input("mousewheel", direction);
-                        return false;
+                        return;
                         }, false);
 
 window.addEventListener("keydown", do_key_down, true);
