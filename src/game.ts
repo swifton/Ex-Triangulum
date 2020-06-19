@@ -52,7 +52,7 @@ let canvas_center = [0, 0];
 let polygons: Polygon[];
 let open_edges: Edge[] = [];
 let edges: Edge[] = [];
-let vertices: Vertex[] = [];
+// let vertices: Vertex[] = [];
 
 let colors: String[] = ["red", "green", "blue", "yellow", "magenta", "cyan"];
 let types: number[] = [3, 4, 6, 8];
@@ -273,8 +273,6 @@ function create_foam() {
     
 	last_edge = first_polygon.edges[0];
     
-	vertices = [{v: {x: 0, y: 0}, angle: 18}, {v: {x: 0, y: 1}, angle: 18}, {v: {x: 1, y: 1}, angle: 18}, {v: {x: 1, y: 0}, angle: 18}];
-	
 	for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
 		edge_i = random_integer(0, open_edges.length);
 		// last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
@@ -302,18 +300,32 @@ function add_polygon(edge: Edge, type: number): boolean {
 		old_edge = new_edge;
 	}
     
-    // Checking that each vertex has enough space around it.
+    // Checking that each vertex has enough space around it for the polygon.
     for (let vx_i = 1; vx_i < polygon_vertices.length; vx_i += 1) {
-		let vx = polygon_vertices[vx_i];
-		
-		for (let v_i = 0; v_i < vertices.length; v_i += 1) {
-			if (same_vertex(vx, vertices[v_i].v)) {
-				if (vertices[v_i].angle - angle_15 < -0.01) {
-                    // console.log("Vertex " + v_i + " is full. " + vertices[v_i].angle * 15 + " degrees left, " + angle_15 * 15 + " needed.");
-					return false;
-				}
-			}
-		}
+		let this_vx = polygon_vertices[vx_i];
+        
+        for (var that_polygon of polygons) {
+            for (let that_vx_i = 0; that_vx_i < that_polygon.vertices.length; that_vx_i += 1) {
+                let that_vx = that_polygon.vertices[that_vx_i];
+                if (same_vertex(this_vx, that_vx)) {
+                    let this_next = polygon_vertices[(vx_i + 1) % polygon_vertices.length];
+                    let prev_i = vx_i - 1;
+                    if (prev_i == -1) prev_i = polygon_vertices.length - 1;
+                    let this_prev = polygon_vertices[prev_i];
+                    
+                    let that_next = that_polygon.vertices[(that_vx_i + 1) % that_polygon.vertices.length];
+                    prev_i = that_vx_i - 1;
+                    if (prev_i == -1) prev_i = that_polygon.vertices.length - 1;
+                    let that_prev = that_polygon.vertices[prev_i];
+                    
+                    if (point_is_on_inner_side(this_prev, this_vx, that_prev) && point_is_on_inner_side(this_vx, this_next, that_prev)) return false;
+                    if (point_is_on_inner_side(this_prev, this_vx, that_next) && point_is_on_inner_side(this_vx, this_next, that_next)) return false;
+                    
+                    if (point_is_on_inner_side(that_prev, that_vx, this_prev) && point_is_on_inner_side(that_vx, that_next, this_prev)) return false;
+                    if (point_is_on_inner_side(that_prev, that_vx, this_next) && point_is_on_inner_side(that_vx, that_next, this_next)) return false;
+                }
+            }
+        }
 	}
 	
 	let new_polygon = new Polygon(polygon_vertices);
@@ -350,43 +362,9 @@ function add_polygon(edge: Edge, type: number): boolean {
         }
     }
 	
-    // Subtract available angles from all vertices that coincide with the 
-    // vertices of the new polygon. Create the rest.
-	let found;
-	for (let vx_i = 0; vx_i < polygon_vertices.length; vx_i += 1) {
-		let vx = polygon_vertices[vx_i];
-		found = false;
-		
-		for (let v_i = 0; v_i < vertices.length; v_i += 1) {
-			if (same_vertex(vx, vertices[v_i].v)) {
-				vertices[v_i].angle -= angle_15;
-				found = true
-			}
-		}
-		
-		if (!found) vertices.push({v: {x: vx.x, y: vx.y}, angle: 24 - angle_15});
-	}
-	
 	polygons.push(new_polygon);
 	console.log("Success!");
     return true;
-}
-
-function add_to_vertex(vertex: Vector, angle_mul_15: number): boolean {
-	for (let vx_i = 0; vx_i < vertices.length; vx_i += 1) {
-		if (same_vertex(vertex, vertices[vx_i].v)) {
-			if (vertices[vx_i].angle - angle_mul_15 < -0.01) {
-				return false;
-			}
-            
-			vertices[vx_i].angle -= angle_mul_15;
-			return true;
-		}
-	}
-	
-	// vertices.push({v: {x: vertex.x, y: vertex.y}, angle: 24 - angle_mul_15});
-    console.log("ERROR: The vertex wasn't found!");
-	return false;
 }
 
 function same_vertex(vertex_1: Vector, vertex_2: Vector): boolean {
