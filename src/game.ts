@@ -24,12 +24,21 @@ interface Edge {
 
 class Polygon {
 	edges: Edge[];
+    center: Vector;
     
 	constructor(public vertices: Vector[]) {
 		this.edges = [];
 		for (let vx_i = 0; vx_i < vertices.length; vx_i += 1) {
 			this.edges.push({v1: vertices[vx_i], v2: vertices[(vx_i + 1) % vertices.length], polygon1: this, polygon2: undefined});
 		}
+        
+        this.center = {x: 0, y: 0}
+        for (var vertex of vertices) {
+            this.center = sum(this.center, vertex);
+        }
+        
+        this.center.x /= vertices.length;
+        this.center.y /= vertices.length;
 	}
 }
 
@@ -42,6 +51,7 @@ let unit_pix: number = 50;
 let canvas_center = [0, 0];
 let polygons: Polygon[];
 let open_edges: Edge[] = [];
+let edges: Edge[] = [];
 let vertices: Vertex[] = [];
 
 let colors: String[] = ["red", "green", "blue", "yellow", "magenta", "cyan"];
@@ -101,7 +111,16 @@ function render() {
         
 		main_context.fill();
 		main_context.stroke();
-	}
+        
+        /*
+        main_context.fillStyle = "orange";
+        main_context.beginPath();
+        let canv_v = world_to_canvas(polygon.center);
+        main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
+        main_context.fill();
+        main_context.fillStyle = "green";
+        */
+    }
 	
 	// Preparing the canvas for drawing open edges
 	main_context.strokeStyle = "red";
@@ -153,6 +172,35 @@ function render() {
 		main_context.fill();
 	}
 	
+    for (var edge of edges) {
+        
+        let edge_center = sum(edge.v1, edge.v2);
+        edge_center =  mul(edge_center, 0.5);
+        let vx_1c = world_to_canvas(edge_center);
+        
+        if (edge.polygon1 != undefined) {
+            let polygon_center = edge.polygon1.center;
+            main_context.strokeStyle = "magenta";
+            main_context.beginPath();
+            let vx_2c = world_to_canvas(polygon_center);
+            
+            main_context.moveTo(vx_1c.x, vx_1c.y);
+            main_context.lineTo(vx_2c.x, vx_2c.y);
+            main_context.stroke();
+        }
+        
+        if (edge.polygon2 != undefined) {
+            let polygon_center = edge.polygon2.center;
+            main_context.strokeStyle = "brown";
+            main_context.beginPath();
+            let vx_2c = world_to_canvas(polygon_center);
+            
+            main_context.moveTo(vx_1c.x, vx_1c.y);
+            main_context.lineTo(vx_2c.x, vx_2c.y);
+            main_context.stroke();
+        }
+    }
+    
 	if (closest_edge != undefined) {
         // Drawing the edge closest to the mouse
         main_context.strokeStyle = "cyan";
@@ -166,6 +214,7 @@ function render() {
         main_context.stroke();
     }
     
+    /*
     main_context.fillStyle = "orange";
     for (var vertex_i in vertices) {
         let vertex = vertices[vertex_i];
@@ -177,6 +226,7 @@ function render() {
         main_context.font = '10px serif';
         main_context.fillText(vertex_i, canv_v.x, canv_v.y);
     }
+    */
     
     main_context.restore();
 }
@@ -201,6 +251,7 @@ function create_foam() {
 	let edge_i;
 	for (edge_i = 0; edge_i < first_polygon.edges.length; edge_i += 1) {
 		open_edges.push(first_polygon.edges[edge_i]);
+		edges.push(first_polygon.edges[edge_i]);
 	}
     
 	last_edge = first_polygon.edges[0];
@@ -239,7 +290,7 @@ function add_polygon(edge: Edge, type: number): boolean {
 		for (let v_i = 0; v_i < vertices.length; v_i += 1) {
 			if (same_vertex(vx, vertices[v_i].v)) {
 				if (vertices[v_i].angle - angle_15 < -0.01) {
-                    console.log("Vertex " + v_i + " is full. " + vertices[v_i].angle * 15 + " degrees left, " + angle_15 * 15 + " needed.");
+                    // console.log("Vertex " + v_i + " is full. " + vertices[v_i].angle * 15 + " degrees left, " + angle_15 * 15 + " needed.");
 					return false;
 				}
 			}
@@ -251,15 +302,28 @@ function add_polygon(edge: Edge, type: number): boolean {
 	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
 		for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
 			if (edges_intersect(open_edges[edg_i], new_polygon.edges[edge_i])) {
-                console.log("Edge " + edg_i + " is in the way.");
+                // console.log("Edge " + edg_i + " is in the way.");
                 return false;
             }
 		}
 	}
     
-	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
-		check_close_edge(new_polygon.edges[edge_i]);
-	}
+	for (var edge_to_check of new_polygon.edges) {
+        let found  = false;
+        for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
+            if (same_edge(edge_to_check, open_edges[edg_i])) {
+                open_edges[edg_i].polygon2 = new_polygon;
+                open_edges.splice(edg_i, 1);
+                found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            open_edges.push(edge_to_check);
+            edges.push(edge_to_check);
+        }
+    }
 	
 	let found;
 	for (let vx_i = 0; vx_i < polygon_vertices.length; vx_i += 1) {
@@ -279,18 +343,6 @@ function add_polygon(edge: Edge, type: number): boolean {
 	polygons.push(new_polygon);
 	console.log("Success!");
     return true;
-}
-
-function check_close_edge(edge_to_check: Edge): void {
-	let to_push = true;
-	for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
-		if (same_edge(edge_to_check, open_edges[edg_i])) {
-			open_edges.splice(edg_i, 1);
-			edg_i -= 1;
-			to_push = false;
-		}
-	}
-	if (to_push) open_edges.push(edge_to_check);
 }
 
 function add_to_vertex(vertex: Vector, angle_mul_15: number): boolean {
@@ -362,9 +414,21 @@ function mouse_up(x: number, y: number): void {
     pan_offset_x = 0;
     pan_offset_y = 0;
     
-    if (!panned && closest_edge != undefined) {
-        let result = add_polygon(closest_edge, 3);
-        if (result) closest_edge = undefined;
+    if (!panned) {
+        if (closest_edge != undefined) {
+            let result = add_polygon(closest_edge, 3);
+            if (result) closest_edge = undefined;
+        }
+        
+        if (hovered_polygon != undefined) {
+            for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+                if (polygons[polygon_i] === hovered_polygon) {
+                    polygons.splice(polygon_i, 1);
+                    hovered_polygon = undefined;
+                    break;
+                }
+            }
+        }
     }
 }
 
