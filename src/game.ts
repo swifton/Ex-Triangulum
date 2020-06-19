@@ -166,12 +166,15 @@ function render() {
     }
     
     main_context.fillStyle = "orange";
-    for (var vertex of vertices) {
+    for (var vertex_i in vertices) {
+        let vertex = vertices[vertex_i];
         main_context.beginPath();
         let canv_v = world_to_canvas(vertex.v);
         main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
         main_context.fill();
         
+        main_context.font = '10px serif';
+        main_context.fillText(vertex_i, canv_v.x, canv_v.y);
     }
     
     main_context.restore();
@@ -217,11 +220,6 @@ function add_polygon(edge: Edge, type: number): void {
 	let vx = edge.v1;
 	let angle_15 = 12 * (type - 2) / type;
 	
-	if (!add_to_vertex(vx, angle_15)) {
-        console.log("First vertex is full.");
-        return;
-    }
-	
 	for (let edgee_i = 0; edgee_i < type - 2; edgee_i += 1) {
 		let new_edge = mul(old_edge, Math.cos(angle));
 		let orth = {x: old_edge.y, y: -old_edge.x};
@@ -240,7 +238,7 @@ function add_polygon(edge: Edge, type: number): void {
 		for (let v_i = 0; v_i < vertices.length; v_i += 1) {
 			if (same_vertex(vx, vertices[v_i].v)) {
 				if (vertices[v_i].angle - angle_15 < -0.01) {
-                    console.log("Vertex " + v_i + " is full.");
+                    console.log("Vertex " + v_i + " is full. " + vertices[v_i].angle * 15 + " degrees left, " + angle_15 * 15 + " needed.");
 					return;
 				}
 			}
@@ -263,7 +261,7 @@ function add_polygon(edge: Edge, type: number): void {
 	}
 	
 	let found;
-	for (let vx_i = 1; vx_i < polygon_vertices.length; vx_i += 1) {
+	for (let vx_i = 0; vx_i < polygon_vertices.length; vx_i += 1) {
 		let vx = polygon_vertices[vx_i];
 		found = false;
 		
