@@ -57,6 +57,7 @@ let scale: number = 1;
 let last_edge: Edge;
 
 let mouse_world_coord: Vector = {x: 0, y: 0};
+let hovered_polygon: Polygon = undefined;
 
 function step() {
 	resize_canvas();
@@ -132,6 +133,23 @@ function render() {
 	let mouse_canvas_coord = world_to_canvas(mouse_world_coord);
 	main_context.arc(mouse_canvas_coord.x, mouse_canvas_coord.y, 5, 0, 2 * Math.PI);
 	main_context.fill();
+
+	if (hovered_polygon != undefined) {
+		main_context.beginPath();
+
+		// Move to the last vertex of the polygon
+		let last_vx = hovered_polygon.vertices[hovered_polygon.vertices.length - 1];
+		let last_vx_canvas = world_to_canvas(last_vx);
+		main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
+
+		// Looping over vertices, drawing the edge to each vertex.
+		for (let vx_i = 0; vx_i < hovered_polygon.vertices.length; vx_i += 1) {
+			let vx_c = world_to_canvas(hovered_polygon.vertices[vx_i]);
+			main_context.lineTo(vx_c.x, vx_c.y);
+		}
+
+		main_context.fill();
+	}
 	
     main_context.restore();
 
@@ -316,6 +334,19 @@ function mouse_up(x: number, y: number): void {
     pan_offset_y = 0;
 }
 
+function point_inside_polygon(point: Vector, polygon: Polygon): boolean {
+	for (let edge_i = 0; edge_i < polygon.edges.length; edge_i += 1) {
+		let edge = polygon.edges[edge_i];
+		let vec1: Vector = {x: edge.v2.x - edge.v1.x, y: edge.v2.y - edge.v1.y};
+		let vec2: Vector = {x: point.x - edge.v1.x, y: point.y - edge.v1.y};
+
+		let determinant = vec1.x * vec2.y - vec1.y * vec2.x;
+		if (determinant > 0) return false;
+	}
+
+	return true;
+}
+
 function mouse_move(x: number, y: number): void {
     if (mouse_is_down) {
         pan_offset_x = x - mouse_down_pos[0];
@@ -323,6 +354,16 @@ function mouse_move(x: number, y: number): void {
     }
 	
 	mouse_world_coord = canvas_to_world({x: x, y: y});
+
+	let found: boolean = false;
+	for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+		if (point_inside_polygon(mouse_world_coord, polygons[polygon_i])) {
+			hovered_polygon = polygons[polygon_i];
+			found = true;
+			break;
+		}
+	}
+	if (!found) hovered_polygon = undefined;
 }
 
 function space_down(): void {
