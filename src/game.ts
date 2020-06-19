@@ -71,6 +71,8 @@ let mouse_world_coord: Vector = {x: 0, y: 0};
 let hovered_polygon: Polygon = undefined;
 let closest_edge: Edge = undefined;
 
+// let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
+
 function step() {
 	resize_canvas();
 	clear_canvas();
@@ -148,9 +150,24 @@ function render() {
 	main_context.lineTo(vx_2c.x, vx_2c.y);
 	main_context.stroke();
     
-	// Visualizing the mouse position.
-	main_context.fillStyle = "red";
+    /*
+	// Drawing an edge for testing the inner side test
+	main_context.strokeStyle = "blue";
+    
 	main_context.beginPath();
+    vx_1c = world_to_canvas(test_inner_side_edge.v1);
+    vx_2c = world_to_canvas(test_inner_side_edge.v2);
+    
+	main_context.moveTo(vx_1c.x, vx_1c.y);
+	main_context.lineTo(vx_2c.x, vx_2c.y);
+	main_context.stroke();
+    */
+    
+	// Visualizing the mouse position.
+	// if (point_is_on_inner_side(test_inner_side_edge.v1, test_inner_side_edge.v2, mouse_world_coord)) main_context.fillStyle = "red";
+    // else main_context.fillStyle = "blue";
+    main_context.fillStyle = "red";
+    main_context.beginPath();
 	let mouse_canvas_coord = world_to_canvas(mouse_world_coord);
 	main_context.arc(mouse_canvas_coord.x, mouse_canvas_coord.y, 5, 0, 2 * Math.PI);
 	main_context.fill();
