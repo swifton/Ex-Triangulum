@@ -165,6 +165,15 @@ function render() {
         main_context.stroke();
     }
     
+    main_context.fillStyle = "orange";
+    for (var vertex of vertices) {
+        main_context.beginPath();
+        let canv_v = world_to_canvas(vertex.v);
+        main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
+        main_context.fill();
+        
+    }
+    
     main_context.restore();
 }
 
@@ -208,7 +217,10 @@ function add_polygon(edge: Edge, type: number): void {
 	let vx = edge.v1;
 	let angle_15 = 12 * (type - 2) / type;
 	
-	if (!add_to_vertex(vx, angle_15)) return;
+	if (!add_to_vertex(vx, angle_15)) {
+        console.log("First vertex is full.");
+        return;
+    }
 	
 	for (let edgee_i = 0; edgee_i < type - 2; edgee_i += 1) {
 		let new_edge = mul(old_edge, Math.cos(angle));
@@ -228,14 +240,29 @@ function add_polygon(edge: Edge, type: number): void {
 		for (let v_i = 0; v_i < vertices.length; v_i += 1) {
 			if (same_vertex(vx, vertices[v_i].v)) {
 				if (vertices[v_i].angle - angle_15 < -0.01) {
+                    console.log("Vertex " + v_i + " is full.");
 					return;
 				}
 			}
 		}
 	}
 	
-	let found;
+	let new_polygon = new Polygon(polygon_vertices);
+    
+	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
+		for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
+			if (edges_intersect(open_edges[edg_i], new_polygon.edges[edge_i])) {
+                console.log("Edge " + edg_i + " is in the way.");
+                return;
+            }
+		}
+	}
+    
+	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
+		check_close_edge(new_polygon.edges[edge_i]);
+	}
 	
+	let found;
 	for (let vx_i = 1; vx_i < polygon_vertices.length; vx_i += 1) {
 		let vx = polygon_vertices[vx_i];
 		found = false;
@@ -248,18 +275,6 @@ function add_polygon(edge: Edge, type: number): void {
 		}
 		
 		if (!found) vertices.push({v: {x: vx.x, y: vx.y}, angle: 24 - angle_15});
-	}
-	
-	let new_polygon = new Polygon(polygon_vertices);
-    
-	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
-		for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
-			if (edges_intersect(open_edges[edg_i], new_polygon.edges[edge_i])) return;
-		}
-	}
-    
-	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
-		check_close_edge(new_polygon.edges[edge_i]);
 	}
 	
 	polygons.push(new_polygon);
@@ -290,8 +305,9 @@ function add_to_vertex(vertex: Vector, angle_mul_15: number): boolean {
 		}
 	}
 	
-	vertices.push({v: {x: vertex.x, y: vertex.y}, angle: 24 - angle_mul_15});
-	return true;
+	// vertices.push({v: {x: vertex.x, y: vertex.y}, angle: 24 - angle_mul_15});
+    console.log("ERROR: The vertex wasn't found!");
+	return false;
 }
 
 function same_vertex(vertex_1: Vector, vertex_2: Vector): boolean {
@@ -336,6 +352,9 @@ function edges_intersect(edge_1: Edge, edge_2: Edge): boolean {
 function mouse_down(x: number, y: number): void {
     mouse_is_down = true;
     mouse_down_pos = [x, y];
+    
+    add_polygon(closest_edge, 3);
+    closest_edge = undefined;
 }
 
 function mouse_up(x: number, y: number): void {
@@ -376,6 +395,7 @@ function mouse_move(x: number, y: number): void {
 	for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
 		if (point_inside_polygon(mouse_world_coord, polygons[polygon_i])) {
 			hovered_polygon = polygons[polygon_i];
+            closest_edge = undefined;
 			found = true;
 			break;
 		}
