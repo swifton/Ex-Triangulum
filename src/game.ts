@@ -272,6 +272,7 @@ function add_polygon(edge: Edge, type: number): boolean {
 	let vx = edge.v1;
 	let angle_15 = 12 * (type - 2) / type;
 	
+    // Constructing the vertices of the future polygon.
 	for (let edgee_i = 0; edgee_i < type - 2; edgee_i += 1) {
 		let new_edge = mul(old_edge, Math.cos(angle));
 		let orth = {x: old_edge.y, y: -old_edge.x};
@@ -284,6 +285,7 @@ function add_polygon(edge: Edge, type: number): boolean {
 		old_edge = new_edge;
 	}
     
+    // Checking that each vertex has enough space around it.
     for (let vx_i = 1; vx_i < polygon_vertices.length; vx_i += 1) {
 		let vx = polygon_vertices[vx_i];
 		
@@ -299,6 +301,8 @@ function add_polygon(edge: Edge, type: number): boolean {
 	
 	let new_polygon = new Polygon(polygon_vertices);
     
+    // Checking that edges of the new polygon don't intersect with outer edges 
+    // of existing polygons.
 	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
 		for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
 			if (edges_intersect(open_edges[edg_i], new_polygon.edges[edge_i])) {
@@ -308,6 +312,8 @@ function add_polygon(edge: Edge, type: number): boolean {
 		}
 	}
     
+    // If some of the edges coincide with existing edges, pick the existing edge instead
+    // of creating a new one. Make it unavailable for new polygons.
 	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
         let edge_to_check = new_polygon.edges[edge_i];
         let found  = false;
@@ -327,6 +333,8 @@ function add_polygon(edge: Edge, type: number): boolean {
         }
     }
 	
+    // Subtract available angles from all vertices that coincide with the 
+    // vertices of the new polygon. Create the rest.
 	let found;
 	for (let vx_i = 0; vx_i < polygon_vertices.length; vx_i += 1) {
 		let vx = polygon_vertices[vx_i];
