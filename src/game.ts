@@ -308,11 +308,13 @@ function add_polygon(edge: Edge, type: number): boolean {
 		}
 	}
     
-	for (var edge_to_check of new_polygon.edges) {
+	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
+        let edge_to_check = new_polygon.edges[edge_i];
         let found  = false;
         for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
             if (same_edge(edge_to_check, open_edges[edg_i])) {
                 open_edges[edg_i].polygon2 = new_polygon;
+                new_polygon.edges[edge_i] = open_edges[edg_i];
                 open_edges.splice(edg_i, 1);
                 found = true;
                 break;
@@ -407,6 +409,15 @@ function mouse_down(x: number, y: number): void {
     panned = false;
 }
 
+function remove_by_value(array: any, element: any): void {
+    for (let element_i = 0; element_i < array.length; element_i += 1) {
+        if (array[element_i] == element) {
+            array.splice(element_i, 1);
+            return;
+        }
+    }
+}
+
 function mouse_up(x: number, y: number): void {
     mouse_is_down = false;
     old_pan_offset_x += pan_offset_x;
@@ -424,6 +435,19 @@ function mouse_up(x: number, y: number): void {
             for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
                 if (polygons[polygon_i] === hovered_polygon) {
                     polygons.splice(polygon_i, 1);
+                    
+                    for (var edge of hovered_polygon.edges) {
+                        if (edge.polygon1 === hovered_polygon) edge.polygon1 = undefined;
+                        if (edge.polygon2 === hovered_polygon) edge.polygon2 = undefined;
+                        
+                        if (edge.polygon1 == undefined && edge.polygon2 == undefined) {
+                            remove_by_value(edges, edge);
+                            remove_by_value(open_edges, edge);
+                        } else {
+                            open_edges.push(edge);
+                        }
+                    }
+                    
                     hovered_polygon = undefined;
                     break;
                 }
@@ -435,10 +459,12 @@ function mouse_up(x: number, y: number): void {
 function point_inside_polygon(point: Vector, polygon: Polygon): boolean {
 	for (let edge_i = 0; edge_i < polygon.edges.length; edge_i += 1) {
 		let edge = polygon.edges[edge_i];
+        
 		let vec1: Vector = {x: edge.v2.x - edge.v1.x, y: edge.v2.y - edge.v1.y};
 		let vec2: Vector = {x: point.x - edge.v1.x, y: point.y - edge.v1.y};
         
 		let determinant = vec1.x * vec2.y - vec1.y * vec2.x;
+        if (edge.polygon2 == polygon) determinant *= -1;
 		if (determinant > 0) return false;
 	}
     
