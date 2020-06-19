@@ -24,7 +24,7 @@ interface Edge {
 
 class Polygon {
 	edges: Edge[];
-
+    
 	constructor(public vertices: Vector[]) {
 		this.edges = [];
 		for (let vx_i = 0; vx_i < vertices.length; vx_i += 1) {
@@ -58,6 +58,7 @@ let last_edge: Edge;
 
 let mouse_world_coord: Vector = {x: 0, y: 0};
 let hovered_polygon: Polygon = undefined;
+let closest_edge: Edge = undefined;
 
 function step() {
 	resize_canvas();
@@ -79,38 +80,38 @@ function render() {
 	// Preparing the canvas for drawing polygons
 	main_context.strokeStyle = "black";
 	main_context.fillStyle = "green";
-
+    
 	// Drawing polygons
 	for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
 		let polygon = polygons[polygon_i];
-
+        
 		main_context.beginPath();
-
+        
 		// Move to the last vertex of the polygon
 		let last_vx = polygon.vertices[polygon.vertices.length - 1];
 		let last_vx_canvas = world_to_canvas(last_vx);
 		main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
-
+        
 		// Looping over vertices, drawing the edge to each vertex.
 		for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
 			let vx_c = world_to_canvas(polygon.vertices[vx_i]);
 			main_context.lineTo(vx_c.x, vx_c.y);
 		}
-
+        
 		main_context.fill();
 		main_context.stroke();
 	}
 	
 	// Preparing the canvas for drawing open edges
 	main_context.strokeStyle = "red";
-
+    
 	// Drawing open edges
 	main_context.beginPath();
 	for (let edge_i = 0; edge_i < open_edges.length; edge_i += 1) {
 		let edge = open_edges[edge_i];
 		let vx_1c = world_to_canvas(edge.v1);
 		let vx_2c = world_to_canvas(edge.v2);
-				
+        
 		main_context.moveTo(vx_1c.x, vx_1c.y);
 		main_context.lineTo(vx_2c.x, vx_2c.y);
 	}
@@ -118,42 +119,53 @@ function render() {
 	
 	// Drawing the last edge for debugging purposes
 	main_context.strokeStyle = "blue";
-
+    
 	main_context.beginPath();
 	let vx_1c = world_to_canvas(last_edge.v1);
 	let vx_2c = world_to_canvas(last_edge.v2);
-				
+    
 	main_context.moveTo(vx_1c.x, vx_1c.y);
 	main_context.lineTo(vx_2c.x, vx_2c.y);
 	main_context.stroke();
-
+    
 	// Visualizing the mouse position.
 	main_context.fillStyle = "red";
 	main_context.beginPath();
 	let mouse_canvas_coord = world_to_canvas(mouse_world_coord);
 	main_context.arc(mouse_canvas_coord.x, mouse_canvas_coord.y, 5, 0, 2 * Math.PI);
 	main_context.fill();
-
+    
 	if (hovered_polygon != undefined) {
 		main_context.beginPath();
-
+        
 		// Move to the last vertex of the polygon
 		let last_vx = hovered_polygon.vertices[hovered_polygon.vertices.length - 1];
 		let last_vx_canvas = world_to_canvas(last_vx);
 		main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
-
+        
 		// Looping over vertices, drawing the edge to each vertex.
 		for (let vx_i = 0; vx_i < hovered_polygon.vertices.length; vx_i += 1) {
 			let vx_c = world_to_canvas(hovered_polygon.vertices[vx_i]);
 			main_context.lineTo(vx_c.x, vx_c.y);
 		}
-
+        
 		main_context.fill();
 	}
 	
+	if (closest_edge != undefined) {
+        // Drawing the edge closest to the mouse
+        main_context.strokeStyle = "cyan";
+        
+        main_context.beginPath();
+        let vx_1c = world_to_canvas(closest_edge.v1);
+        let vx_2c = world_to_canvas(closest_edge.v2);
+        
+        main_context.moveTo(vx_1c.x, vx_1c.y);
+        main_context.lineTo(vx_2c.x, vx_2c.y);
+        main_context.stroke();
+    }
+    
     main_context.restore();
-
-
 }
 
 function canvas_to_world(canvas_point: Vector): Vector {
@@ -177,9 +189,9 @@ function create_foam() {
 	for (edge_i = 0; edge_i < first_polygon.edges.length; edge_i += 1) {
 		open_edges.push(first_polygon.edges[edge_i]);
 	}
-
+    
 	last_edge = first_polygon.edges[0];
-
+    
 	vertices = [{v: {x: 0, y: 0}, angle: 18}, {v: {x: 0, y: 1}, angle: 18}, {v: {x: 1, y: 1}, angle: 18}, {v: {x: 1, y: 0}, angle: 18}];
 	
 	for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
@@ -202,14 +214,14 @@ function add_polygon(edge: Edge, type: number): void {
 		let new_edge = mul(old_edge, Math.cos(angle));
 		let orth = {x: old_edge.y, y: -old_edge.x};
 		new_edge = sum(new_edge, mul(orth, Math.sin(angle)))
-		let new_vx = sum(vx, new_edge);
+            let new_vx = sum(vx, new_edge);
 		
 		polygon_vertices.push(new_vx);
 		
 		vx = new_vx;
 		old_edge = new_edge;
 	}
-
+    
     for (let vx_i = 1; vx_i < polygon_vertices.length; vx_i += 1) {
 		let vx = polygon_vertices[vx_i];
 		
@@ -239,13 +251,13 @@ function add_polygon(edge: Edge, type: number): void {
 	}
 	
 	let new_polygon = new Polygon(polygon_vertices);
-
+    
 	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
 		for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
 			if (edges_intersect(open_edges[edg_i], new_polygon.edges[edge_i])) return;
 		}
 	}
-
+    
 	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
 		check_close_edge(new_polygon.edges[edge_i]);
 	}
@@ -272,7 +284,7 @@ function add_to_vertex(vertex: Vector, angle_mul_15: number): boolean {
 			if (vertices[vx_i].angle - angle_mul_15 < -0.01) {
 				return false;
 			}
-
+            
 			vertices[vx_i].angle -= angle_mul_15;
 			return true;
 		}
@@ -311,13 +323,13 @@ function edges_intersect(edge_1: Edge, edge_2: Edge): boolean {
     let y3 = edge_2.v1.y;
     let x4 = edge_2.v2.x;
     let y4 = edge_2.v2.y;
-
+    
     let side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1);
     let side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1);
-
+    
     let side3 = (x1 - x3) * (y3 - y4) - (x3 - x4) * (y1 - y3);
     let side4 = (x2 - x3) * (y3 - y4) - (x3 - x4) * (y2 - y3);
-
+    
     return side1 * side2 < 0 && side3 * side4 < 0;
 }
 
@@ -339,12 +351,17 @@ function point_inside_polygon(point: Vector, polygon: Polygon): boolean {
 		let edge = polygon.edges[edge_i];
 		let vec1: Vector = {x: edge.v2.x - edge.v1.x, y: edge.v2.y - edge.v1.y};
 		let vec2: Vector = {x: point.x - edge.v1.x, y: point.y - edge.v1.y};
-
+        
 		let determinant = vec1.x * vec2.y - vec1.y * vec2.x;
 		if (determinant > 0) return false;
 	}
-
+    
 	return true;
+}
+
+// The Euclid distance between two points.
+function euclid(p1: Vector, p2: Vector):number {
+    return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
 }
 
 function mouse_move(x: number, y: number): void {
@@ -354,7 +371,7 @@ function mouse_move(x: number, y: number): void {
     }
 	
 	mouse_world_coord = canvas_to_world({x: x, y: y});
-
+    
 	let found: boolean = false;
 	for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
 		if (point_inside_polygon(mouse_world_coord, polygons[polygon_i])) {
@@ -363,7 +380,18 @@ function mouse_move(x: number, y: number): void {
 			break;
 		}
 	}
-	if (!found) hovered_polygon = undefined;
+	
+	if (!found) {
+		hovered_polygon = undefined;
+        let min_dist = Number.MAX_VALUE;
+        for (var edge of open_edges) {
+            let dist = euclid(mouse_world_coord, edge.v1) + euclid(mouse_world_coord, edge.v2);
+            if (min_dist > dist) {
+                min_dist = dist;
+                closest_edge = edge;
+            }
+        }
+	}
 }
 
 function space_down(): void {
