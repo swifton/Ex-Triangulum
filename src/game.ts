@@ -86,12 +86,12 @@ function render() {
 		// Move to the last vertex of the polygon
 		let last_vx = polygon.vertices[polygon.vertices.length - 1];
 		let last_vx_canvas = world_to_canvas(last_vx);
-		main_context.moveTo(last_vx_canvas[0], last_vx_canvas[1]);
+		main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
 
 		// Looping over vertices, drawing the edge to each vertex.
 		for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
 			let vx_c = world_to_canvas(polygon.vertices[vx_i]);
-			main_context.lineTo(vx_c[0], vx_c[1]);
+			main_context.lineTo(vx_c.x, vx_c.y);
 		}
 
 		main_context.fill();
@@ -108,8 +108,8 @@ function render() {
 		let vx_1c = world_to_canvas(edge.v1);
 		let vx_2c = world_to_canvas(edge.v2);
 				
-		main_context.moveTo(vx_1c[0], vx_1c[1]);
-		main_context.lineTo(vx_2c[0], vx_2c[1]);
+		main_context.moveTo(vx_1c.x, vx_1c.y);
+		main_context.lineTo(vx_2c.x, vx_2c.y);
 	}
 	main_context.stroke();
 	
@@ -120,17 +120,17 @@ function render() {
 	let vx_1c = world_to_canvas(last_edge.v1);
 	let vx_2c = world_to_canvas(last_edge.v2);
 				
-	main_context.moveTo(vx_1c[0], vx_1c[1]);
-	main_context.lineTo(vx_2c[0], vx_2c[1]);
+	main_context.moveTo(vx_1c.x, vx_1c.y);
+	main_context.lineTo(vx_2c.x, vx_2c.y);
 	main_context.stroke();
 	
     main_context.restore();
 }
 
-function world_to_canvas(world_point: Vector) {
+function world_to_canvas(world_point: Vector): Vector {
 	let cx: number = world_point.x * unit_pix + canvas_center[0];
 	let cy: number = world_point.y * unit_pix + canvas_center[1];
-	return [cx, cy];
+	return {x: cx, y: cy};
 }
 
 function create_foam() {
@@ -286,12 +286,12 @@ function edges_intersect(edge_1: Edge, edge_2: Edge): boolean {
     return side1 * side2 < 0 && side3 * side4 < 0;
 }
 
-function mouse_down(x: number, y: number) {
+function mouse_down(x: number, y: number): void {
     mouse_is_down = true;
     mouse_down_pos = [x, y];
 }
 
-function mouse_up(x: number, y: number) {
+function mouse_up(x: number, y: number): void {
     mouse_is_down = false;
     old_pan_offset_x += pan_offset_x;
     old_pan_offset_y += pan_offset_y;
@@ -299,20 +299,20 @@ function mouse_up(x: number, y: number) {
     pan_offset_y = 0;
 }
 
-function mouse_move(x: number, y: number) {
+function mouse_move(x: number, y: number): void {
     if (mouse_is_down) {
         pan_offset_x = x - mouse_down_pos[0];
         pan_offset_y = y - mouse_down_pos[1];
     }
 }
 
-function space_down() {
+function space_down(): void {
 	let edge_i = random_integer(0, open_edges.length);
 	// last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
 	add_polygon(open_edges[edge_i], types[random_integer(0, types.length)]);
 }
 
-function mouse_scroll(direction: number) {
+function mouse_scroll(direction: number): void {
     scale += direction * 0.1;
 }
 
