@@ -53,6 +53,7 @@ let pan_offset_y: number = 0;
 let old_pan_offset_x: number = 0;
 let old_pan_offset_y: number = 0;
 let scale: number = 1;
+let panned = false;
 
 let last_edge: Edge;
 
@@ -351,11 +352,7 @@ function edges_intersect(edge_1: Edge, edge_2: Edge): boolean {
 function mouse_down(x: number, y: number): void {
     mouse_is_down = true;
     mouse_down_pos = [x, y];
-    
-    if (closest_edge != undefined) {
-        let result = add_polygon(closest_edge, 3);
-        if (result) closest_edge = undefined;
-    }
+    panned = false;
 }
 
 function mouse_up(x: number, y: number): void {
@@ -364,6 +361,11 @@ function mouse_up(x: number, y: number): void {
     old_pan_offset_y += pan_offset_y;
     pan_offset_x = 0;
     pan_offset_y = 0;
+    
+    if (!panned && closest_edge != undefined) {
+        let result = add_polygon(closest_edge, 3);
+        if (result) closest_edge = undefined;
+    }
 }
 
 function point_inside_polygon(point: Vector, polygon: Polygon): boolean {
@@ -388,6 +390,7 @@ function mouse_move(x: number, y: number): void {
     if (mouse_is_down) {
         pan_offset_x = x - mouse_down_pos[0];
         pan_offset_y = y - mouse_down_pos[1];
+        panned = true;
     }
 	
 	mouse_world_coord = canvas_to_world({x: x, y: y});
