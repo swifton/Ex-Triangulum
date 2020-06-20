@@ -30,6 +30,8 @@ interface Transformation {
     sin: number;
     cos: number;
     scale: number;
+    dx: number;
+    dy: number;
 }
 
 class Polygon {
@@ -369,6 +371,9 @@ function create_foam() {
     
     test_transform_edge_1.v1 = transform(test_transform_edge_1.v1, transformation);
     test_transform_edge_1.v2 = transform(test_transform_edge_1.v2, transformation);
+    
+    test_transform_edge_1.v1.x += 0.1;
+    test_transform_edge_1.v2.x += 0.1;
 }
 
 // Finds a linear transformation that transforms edge_1 into edge_2
@@ -395,13 +400,18 @@ function find_transformation(edge_1: Edge, edge_2: Edge): Transformation {
     let sin_a = sin_a_e * cos_a_t - cos_a_e * sin_a_t;
     let cos_a = cos_a_e * cos_a_t + sin_a_e * sin_a_t;
     
-    return {sin: sin_a, cos: cos_a, scale: len_e / len_t}
+    let result: Transformation = {sin: sin_a, cos: cos_a, scale: len_e / len_t, dx: 0, dy: 0};
+    let intermediary_v1 = transform(edge_1.v1, result);
+    result.dx = edge_2.v1.x - intermediary_v1.x;
+    result.dy = edge_2.v1.y - intermediary_v1.y;
+    
+    return result;
 }
 
 // Applies a linear transformation to a point.
 function transform(point: Vector, transformation: Transformation): Vector {
-    let x_new = transformation.scale * (point.x * transformation.cos - point.y * transformation.sin);
-    let y_new = transformation.scale * (point.x * transformation.sin + point.y * transformation.cos);
+    let x_new = transformation.scale * (point.x * transformation.cos - point.y * transformation.sin) + transformation.dx;
+    let y_new = transformation.scale * (point.x * transformation.sin + point.y * transformation.cos) + transformation.dy;
     
     return {x: x_new, y: y_new};
 }
