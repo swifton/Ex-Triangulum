@@ -70,6 +70,7 @@ let last_edge: Edge;
 let mouse_world_coord: Vector = {x: 0, y: 0};
 let hovered_polygon: Polygon = undefined;
 let closest_edge: Edge = undefined;
+let to_add_type = 3;
 
 // let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
 
@@ -442,7 +443,7 @@ function mouse_up(x: number, y: number): void {
     
     if (!panned) {
         if (closest_edge != undefined) {
-            let result = add_polygon(closest_edge, 3);
+            let result = add_polygon(closest_edge, to_add_type);
             if (result) closest_edge = undefined;
         }
         
@@ -530,9 +531,9 @@ function mouse_move(x: number, y: number): void {
 }
 
 function space_down(): void {
-	let edge_i = random_integer(0, open_edges.length);
-	// last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
-	add_polygon(open_edges[edge_i], types[random_integer(0, types.length)]);
+	if (hovered_polygon != undefined) {
+        to_add_type = hovered_polygon.vertices.length;
+    }
 }
 
 function mouse_scroll(direction: number): void {
