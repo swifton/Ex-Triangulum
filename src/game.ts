@@ -22,6 +22,15 @@ interface Edge {
 	polygon2: Polygon;
 }
 
+interface Polygon_Template {
+    vertices: Vector[];
+}
+
+interface Transformation {
+    sin: number;
+    cos: number;
+}
+
 class Polygon {
 	edges: Edge[];
     center: Vector;
@@ -76,7 +85,12 @@ let debug_edge_1: Vector[] = undefined;
 let debug_edge_2: Vector[] = undefined;
 let debug_edge_3: Vector[] = undefined;
 
+let square_template: Polygon_Template = {vertices: [{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 1, y: 0}]};
+
 // let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
+let test_transform_edge_1: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
+let test_transform_edge_2: Edge = {v1: {x: 4, y: 3}, v2: {x: 2, y: 4}, polygon1: undefined, polygon2:undefined};
+
 
 function step() {
 	resize_canvas();
@@ -172,6 +186,27 @@ function render() {
 	main_context.stroke();
     */
     
+	// Drawing edges for testing linear transform
+	main_context.strokeStyle = "blue";
+    
+	main_context.beginPath();
+    vx_1c = world_to_canvas(test_transform_edge_1.v1);
+    vx_2c = world_to_canvas(test_transform_edge_1.v2);
+    
+	main_context.moveTo(vx_1c.x, vx_1c.y);
+	main_context.lineTo(vx_2c.x, vx_2c.y);
+	main_context.stroke();
+    
+	main_context.strokeStyle = "red";
+    
+	main_context.beginPath();
+    vx_1c = world_to_canvas(test_transform_edge_2.v1);
+    vx_2c = world_to_canvas(test_transform_edge_2.v2);
+    
+	main_context.moveTo(vx_1c.x, vx_1c.y);
+	main_context.lineTo(vx_2c.x, vx_2c.y);
+	main_context.stroke();
+    
 	// Visualizing the mouse position.
 	// if (point_is_on_inner_side(test_inner_side_edge.v1, test_inner_side_edge.v2, mouse_world_coord)) main_context.fillStyle = "red";
     // else main_context.fillStyle = "blue";
@@ -199,7 +234,6 @@ function render() {
 	}
 	
     for (var edge of edges) {
-        
         let edge_center = sum(edge.v1, edge.v2);
         edge_center =  mul(edge_center, 0.5);
         let vx_1c = world_to_canvas(edge_center);
@@ -327,8 +361,48 @@ function create_foam() {
 	for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
 		edge_i = random_integer(0, open_edges.length);
 		// last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
-		add_polygon(open_edges[edge_i], types[random_integer(0, types.length)]);
+		// add_polygon(open_edges[edge_i], types[random_integer(0, types.length)]);
 	}
+    
+    let transformation = find_transformation(test_transform_edge_1, test_transform_edge_2);
+    
+    test_transform_edge_1.v1 = transform(test_transform_edge_1.v1, transformation);
+    test_transform_edge_1.v2 = transform(test_transform_edge_1.v2, transformation);
+}
+
+// Finds a linear transformation that transforms edge_1 into edge_2
+function find_transformation(edge_1: Edge, edge_2: Edge): Transformation {
+    let xt1 = edge_1.v1.x;
+    let yt1 = edge_1.v1.y;
+    let xt2 = edge_1.v2.x;
+    let yt2 = edge_1.v2.y;
+    
+    let xe1 = edge_2.v1.x;
+    let ye1 = edge_2.v1.y;
+    let xe2 = edge_2.v2.x;
+    let ye2 = edge_2.v2.y;
+    
+    let len_t = euclid(test_transform_edge_1.v1, test_transform_edge_1.v2);
+    let len_e = euclid(test_transform_edge_2.v1, test_transform_edge_2.v2);
+    
+    let sin_a_t = (yt2 - yt1) / len_t;
+    let cos_a_t = (xt2 - xt1) / len_t;
+    
+    let sin_a_e = (ye2 - ye1) / len_e;
+    let cos_a_e = (xe2 - xe1) / len_e;
+    
+    let sin_a = sin_a_e * cos_a_t - cos_a_e * sin_a_t;
+    let cos_a = cos_a_e * cos_a_t + sin_a_e * sin_a_t;
+    
+    return {sin: sin_a, cos: cos_a}
+}
+
+// Applies a linear transformation to a point.
+function transform(point: Vector, transformation: Transformation): Vector {
+    let x_new = (point.x * transformation.cos - point.y * transformation.sin);
+    let y_new = (point.x * transformation.sin + point.y * transformation.cos);
+    
+    return {x: x_new, y: y_new};
 }
 
 function add_polygon(edge: Edge, type: number): boolean {
@@ -353,8 +427,8 @@ function add_polygon(edge: Edge, type: number): boolean {
 	for (let edgee_i = 0; edgee_i < type - 2; edgee_i += 1) {
 		let new_edge = mul(old_edge, Math.cos(angle));
 		let orth = {x: old_edge.y, y: -old_edge.x};
-		new_edge = sum(new_edge, mul(orth, Math.sin(angle)))
-            let new_vx = sum(vx, new_edge);
+		new_edge = sum(new_edge, mul(orth, Math.sin(angle)));
+        let new_vx = sum(vx, new_edge);
 		
 		polygon_vertices.push(new_vx);
 		
