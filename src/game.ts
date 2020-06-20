@@ -72,6 +72,10 @@ let hovered_polygon: Polygon = undefined;
 let closest_edge: Edge = undefined;
 let to_add_type = 3;
 
+let debug_edge_1: Vector[] = undefined;
+let debug_edge_2: Vector[] = undefined;
+let debug_edge_3: Vector[] = undefined;
+
 // let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
 
 function step() {
@@ -115,13 +119,17 @@ function render() {
 		main_context.fill();
 		main_context.stroke();
         
-        /*
         main_context.fillStyle = "orange";
-        main_context.beginPath();
+        // main_context.beginPath();
         let canv_v = world_to_canvas(polygon.center);
-        main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
-        main_context.fill();
+        main_context.font = '10px serif';
+        main_context.fillText(polygon_i.toString(), canv_v.x, canv_v.y);
+        // main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
+        // main_context.fill();
         main_context.fillStyle = "green";
+        
+        
+        /*
         */
     }
 	
@@ -246,6 +254,48 @@ function render() {
     }
     */
     
+    main_context.fillStyle = "orange";
+    for (var edge_i = 0; edge_i < open_edges.length; edge_i += 1) {
+        let edge = open_edges[edge_i];
+        let label_world = mul(sum(edge.v1, edge.v2), 0.5);
+        let label_canv = world_to_canvas(label_world);
+        main_context.font = '10px serif';
+        main_context.fillText(edge_i.toString(), label_canv.x, label_canv.y);
+    }
+    
+    if (debug_edge_1 != undefined) {
+        main_context.strokeStyle = "cyan";
+        
+        main_context.beginPath();
+        let vx_1c = world_to_canvas(debug_edge_1[0]);
+        let vx_2c = world_to_canvas(debug_edge_1[1]);
+        
+        main_context.moveTo(vx_1c.x, vx_1c.y);
+        main_context.lineTo(vx_2c.x, vx_2c.y);
+        main_context.stroke();
+        
+        main_context.strokeStyle = "blue";
+        
+        main_context.beginPath();
+        vx_1c = world_to_canvas(debug_edge_2[0]);
+        vx_2c = world_to_canvas(debug_edge_2[1]);
+        
+        main_context.moveTo(vx_1c.x, vx_1c.y);
+        main_context.lineTo(vx_2c.x, vx_2c.y);
+        main_context.stroke();
+        
+        main_context.strokeStyle = "magenta";
+        
+        main_context.beginPath();
+        vx_1c = world_to_canvas(debug_edge_3[0]);
+        vx_2c = world_to_canvas(debug_edge_3[1]);
+        
+        main_context.moveTo(vx_1c.x, vx_1c.y);
+        main_context.lineTo(vx_2c.x, vx_2c.y);
+        main_context.stroke();
+        
+    }
+    
     main_context.restore();
 }
 
@@ -330,11 +380,33 @@ function add_polygon(edge: Edge, type: number): boolean {
                     if (prev_i == -1) prev_i = that_polygon.vertices.length - 1;
                     let that_prev = that_polygon.vertices[prev_i];
                     
-                    if (point_is_on_inner_side(this_prev, this_vx, that_prev) && point_is_on_inner_side(this_vx, this_next, that_prev)) return false;
-                    if (point_is_on_inner_side(this_prev, this_vx, that_next) && point_is_on_inner_side(this_vx, this_next, that_next)) return false;
+                    // This code checks that the new polygon won't intersect with old polygons. This code is difficult to understand, 
+                    // maintain and debug. It should be replaced with something else.
+                    if (point_is_on_inner_side(this_prev, this_vx, that_prev) && point_is_on_inner_side(this_vx, this_next, that_prev)) {
+                        console.log("1Vertex collision"); 
+                        debug_edge_1 = [this_prev, this_vx];
+                        debug_edge_2 = [this_vx, this_next];
+                        debug_edge_3 = [that_vx, that_prev];
+                        
+                        if (!same_vertex(this_prev, that_prev) && !same_vertex(this_next, that_prev)) return false;
+                        console.log("Exit prevented."); 
+                    }
+                    if (point_is_on_inner_side(this_prev, this_vx, that_next) && point_is_on_inner_side(this_vx, this_next, that_next)) {
+                        console.log("Vertex collision");
+                        if (!same_vertex(this_prev, that_next) && !same_vertex(this_next, that_next)) return false;
+                        console.log("Exit prevented."); 
+                    }
                     
-                    if (point_is_on_inner_side(that_prev, that_vx, this_prev) && point_is_on_inner_side(that_vx, that_next, this_prev)) return false;
-                    if (point_is_on_inner_side(that_prev, that_vx, this_next) && point_is_on_inner_side(that_vx, that_next, this_next)) return false;
+                    if (point_is_on_inner_side(that_prev, that_vx, this_prev) && point_is_on_inner_side(that_vx, that_next, this_prev)) {
+                        console.log("Vertex collision"); 
+                        if (!same_vertex(that_prev, this_prev) && !same_vertex(that_next, this_prev)) return false;
+                        console.log("Exit prevented."); 
+                    }
+                    if (point_is_on_inner_side(that_prev, that_vx, this_next) && point_is_on_inner_side(that_vx, that_next, this_next)) {
+                        console.log("Vertex collision"); 
+                        if (!same_vertex(that_prev, this_next) && !same_vertex(that_next, this_next)) return false;
+                        console.log("Exit prevented."); 
+                    }
                 }
             }
         }
@@ -346,9 +418,12 @@ function add_polygon(edge: Edge, type: number): boolean {
     // of existing polygons.
 	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
 		for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
-			if (edges_intersect(open_edges[edg_i], new_polygon.edges[edge_i])) {
-                // console.log("Edge " + edg_i + " is in the way.");
-                return false;
+            let edg = open_edges[edg_i];
+            let edge = new_polygon.edges[edge_i];
+			if (edges_intersect(edg, edge)) {
+                console.log("Edge " + edg_i + " is in the way.");
+                if (!same_vertex(edge.v1, edg.v1) && !same_vertex(edge.v1, edg.v2) && !same_vertex(edge.v2, edg.v1) && !same_vertex(edge.v2, edg.v2)) return false;
+                console.log("Exit prevented."); 
             }
 		}
 	}
