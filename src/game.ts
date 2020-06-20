@@ -29,6 +29,7 @@ interface Polygon_Template {
 interface Transformation {
     sin: number;
     cos: number;
+    scale: number;
 }
 
 class Polygon {
@@ -382,8 +383,8 @@ function find_transformation(edge_1: Edge, edge_2: Edge): Transformation {
     let xe2 = edge_2.v2.x;
     let ye2 = edge_2.v2.y;
     
-    let len_t = euclid(test_transform_edge_1.v1, test_transform_edge_1.v2);
-    let len_e = euclid(test_transform_edge_2.v1, test_transform_edge_2.v2);
+    let len_t = euclid(edge_1.v1, edge_1.v2);
+    let len_e = euclid(edge_2.v1, edge_2.v2);
     
     let sin_a_t = (yt2 - yt1) / len_t;
     let cos_a_t = (xt2 - xt1) / len_t;
@@ -394,13 +395,13 @@ function find_transformation(edge_1: Edge, edge_2: Edge): Transformation {
     let sin_a = sin_a_e * cos_a_t - cos_a_e * sin_a_t;
     let cos_a = cos_a_e * cos_a_t + sin_a_e * sin_a_t;
     
-    return {sin: sin_a, cos: cos_a}
+    return {sin: sin_a, cos: cos_a, scale: len_e / len_t}
 }
 
 // Applies a linear transformation to a point.
 function transform(point: Vector, transformation: Transformation): Vector {
-    let x_new = (point.x * transformation.cos - point.y * transformation.sin);
-    let y_new = (point.x * transformation.sin + point.y * transformation.cos);
+    let x_new = transformation.scale * (point.x * transformation.cos - point.y * transformation.sin);
+    let y_new = transformation.scale * (point.x * transformation.sin + point.y * transformation.cos);
     
     return {x: x_new, y: y_new};
 }
