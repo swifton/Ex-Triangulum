@@ -325,8 +325,8 @@ function render() {
     }
     */
     
-    /*
-// Edge labels for debugging.
+    
+    // Edge labels for debugging.
     main_context.fillStyle = "orange";
     for (var edge_i = 0; edge_i < open_edges.length; edge_i += 1) {
         let edge = open_edges[edge_i];
@@ -335,7 +335,7 @@ function render() {
         main_context.font = '10px serif';
         main_context.fillText(edge_i.toString(), label_canv.x, label_canv.y);
     }
-    */
+    
     
     /*
 // Edges for debugging polygon collisions
@@ -657,7 +657,51 @@ function remove_by_value(array: any, element: any): void {
     }
 }
 
-function cut_polygons(): void {}
+function cut_polygons(): void {
+    // The vertex to cut the edge at, the edge index in the 'edges' array, the distance to v1.
+    let to_cut: [Vector, number, number][] = [];
+    let threshold = 0.1;
+    
+    let v1 = hovered_vertex;
+    let v2 = selected_vertex;
+    let w1 = sum(v1, mul(v2, -1));
+    
+    // Detecting which edges intersect with the line given by selected vertices.
+    for (let edge_i = 0; edge_i < edges.length; edge_i += 1) {
+        // Looking for the intersection.
+        let edge = edges[edge_i];
+        // Making a system of linear equations for alpha and beta -- parameters that parameterize the lines.
+        let w2 = sum(edge.v2, mul(edge.v1, -1));
+        let w3 = sum(edge.v2, mul(v2, -1));
+        
+        let determinant = w1.x * w2.y - w1.y * w2.x;
+        // Degenerate cases -- parallel segments and segments on the same line.
+        if (Math.abs(determinant) < threshold) continue;
+        
+        // Solving the system of linear equations.
+        let alpha = (1/determinant) * (w2.y * w3.x - w2.x * w3.y);
+        let beta = (1/determinant) * (-w1.y * w3.x + w1.x * w3.y);
+        
+        // The intersection has to be inside both segments.
+        if (alpha > 1 - threshold || alpha < threshold) continue;
+        if (beta > 1 - threshold || beta < threshold) continue;
+        
+        let new_vertex = sum(mul(v1, alpha), mul(v2, 1 - alpha));
+        to_cut.push([new_vertex, edge_i, euclid(new_vertex, v1)]);
+    }
+    to_cut.push([v2, undefined, euclid(v2, v1)]);
+    
+    // Sorting by distance to v1 in ascending order.
+    to_cut.sort(function compare(a, b) {return a[2] - b[2]});
+    
+    let old_v = v1;
+    for (var tup of to_cut) {
+        open_edges.push({v1: {x: old_v.x, y: old_v.y}, v2: tup[0], polygon1: undefined, polygon2: undefined});
+        old_v = tup[0];
+    }
+    
+    
+}
 
 function mouse_up(x: number, y: number): void {
     mouse_is_down = false;
