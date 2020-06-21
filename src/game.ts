@@ -61,7 +61,7 @@ interface Vertex {
 
 let unit_pix: number = 50;
 let canvas_center = [0, 0];
-let polygons: Polygon[];
+let polygons: Polygon[] = [];
 let open_edges: Edge[] = [];
 let edges: Edge[] = [];
 
@@ -77,6 +77,8 @@ let last_edge: Edge;
 
 let mouse_world_coord: Vector = {x: 0, y: 0};
 let hovered_polygon: Polygon = undefined;
+let hovered_vertex: Vector = undefined;
+let selected_vertex: Vector = undefined;
 let closest_edge: Edge = undefined;
 let to_add_type = 3;
 
@@ -247,6 +249,7 @@ function render() {
     */
     
 	if (hovered_polygon != undefined) {
+        main_context.fillStyle = "red";
 		main_context.beginPath();
         
 		// Move to the last vertex of the polygon
@@ -370,39 +373,69 @@ function render() {
     }
     */
     
+    // Visualizing the hovered vertex
+    if (hovered_vertex != undefined) {
+        main_context.fillStyle = "yellow";
+        main_context.beginPath();
+        let canv_v = world_to_canvas(hovered_vertex);
+        main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
+        main_context.fill();
+    }
+    
+    // Visualizing the selected vertex
+    if (selected_vertex != undefined) {
+        main_context.fillStyle = "yellow";
+        main_context.beginPath();
+        let canv_v = world_to_canvas(selected_vertex);
+        main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
+        main_context.fill();
+    }
+    
+    // Visualizing the line by which the polygons will be cut.
+    if (hovered_vertex != undefined && selected_vertex != undefined) {
+        main_context.strokeStyle = "blue";
+        let selected_c = world_to_canvas(selected_vertex);
+        let hovered_c = world_to_canvas(hovered_vertex);
+        main_context.beginPath();
+        main_context.moveTo(selected_c.x, selected_c.y);
+        main_context.lineTo(hovered_c.x, hovered_c.y);
+        main_context.stroke();
+    }
+    
     main_context.restore();
 }
 
 function canvas_to_world(canvas_point: Vector): Vector {
-	let wx: number = (canvas_point.x - canvas_center[0]) / unit_pix;
-	let wy: number = (canvas_point.y - canvas_center[1]) / unit_pix;
-	return {x: wx, y: wy};
+    let wx: number = (canvas_point.x - canvas_center[0]) / unit_pix;
+    let wy: number = (canvas_point.y - canvas_center[1]) / unit_pix;
+    return {x: wx, y: wy};
 }
 
 function world_to_canvas(world_point: Vector): Vector {
-	let cx: number = world_point.x * unit_pix + canvas_center[0];
-	let cy: number = world_point.y * unit_pix + canvas_center[1];
-	return {x: cx, y: cy};
+    let cx: number = world_point.x * unit_pix + canvas_center[0];
+    let cy: number = world_point.y * unit_pix + canvas_center[1];
+    return {x: cx, y: cy};
 }
 
 function create_foam() {
-	let first_polygon = new Polygon([{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 1, y: 0}]);
-	polygons = [first_polygon];
-	
-	open_edges = [];
-	let edge_i;
-	for (edge_i = 0; edge_i < first_polygon.edges.length; edge_i += 1) {
-		open_edges.push(first_polygon.edges[edge_i]);
-		edges.push(first_polygon.edges[edge_i]);
-	}
+    let first_polygon = new Polygon([{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 1, y: 0}]);
+    polygons = [first_polygon];
+    add_polygon(first_edge, triangle_template);
     
-	last_edge = first_polygon.edges[0];
+    open_edges = [];
+    let edge_i;
+    for (edge_i = 0; edge_i < first_polygon.edges.length; edge_i += 1) {
+        open_edges.push(first_polygon.edges[edge_i]);
+        edges.push(first_polygon.edges[edge_i]);
+    }
     
-	for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
-		edge_i = random_integer(0, open_edges.length);
-		// last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
+    last_edge = first_polygon.edges[0];
+    
+    for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
+        edge_i = random_integer(0, open_edges.length);
+        // last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
         add_polygon(open_edges[edge_i], templates[random_integer(0, templates.length)]);
-	}
+    }
     
     let transformation = find_transformation(test_transform_edge_1, test_transform_edge_2);
     
@@ -411,6 +444,7 @@ function create_foam() {
     
     test_transform_edge_1.v1.x += 0.1;
     test_transform_edge_1.v2.x += 0.1;
+    
 }
 
 // Finds a linear transformation that transforms edge_1 into edge_2
@@ -478,7 +512,7 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
     
     // Checking that each vertex has enough space around it for the polygon.
     for (let vx_i = 1; vx_i < polygon_vertices.length; vx_i += 1) {
-		let this_vx = polygon_vertices[vx_i];
+        let this_vx = polygon_vertices[vx_i];
         
         for (var that_polygon of polygons) {
             for (let that_vx_i = 0; that_vx_i < that_polygon.vertices.length; that_vx_i += 1) {
@@ -524,27 +558,27 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
                 }
             }
         }
-	}
-	
-	let new_polygon = new Polygon(polygon_vertices);
+    }
+    
+    let new_polygon = new Polygon(polygon_vertices);
     
     // Checking that edges of the new polygon don't intersect with outer edges 
     // of existing polygons.
-	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
-		for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
+    for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
+        for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
             let edg = open_edges[edg_i];
             let edge = new_polygon.edges[edge_i];
-			if (edges_intersect(edg, edge)) {
+            if (edges_intersect(edg, edge)) {
                 console.log("Edge " + edg_i + " is in the way.");
                 if (!same_vertex(edge.v1, edg.v1) && !same_vertex(edge.v1, edg.v2) && !same_vertex(edge.v2, edg.v1) && !same_vertex(edge.v2, edg.v2)) return false;
                 console.log("Exit prevented."); 
             }
-		}
-	}
+        }
+    }
     
     // If some of the edges coincide with existing edges, pick the existing edge instead
     // of creating a new one. Make it unavailable for new polygons.
-	for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
+    for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
         let edge_to_check = new_polygon.edges[edge_i];
         let found  = false;
         for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
@@ -563,29 +597,29 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
             edges.push(edge_to_check);
         }
     }
-	
-	polygons.push(new_polygon);
-	console.log("Success!");
+    
+    polygons.push(new_polygon);
+    console.log("Success!");
     return true;
 }
 
 function same_vertex(vertex_1: Vector, vertex_2: Vector): boolean {
-	let threshold = 0.1;
-	if (manhattan(vertex_1, vertex_2) < threshold) return true;
-	return false;
+    let threshold = 0.1;
+    if (manhattan(vertex_1, vertex_2) < threshold) return true;
+    return false;
 }
 
 // The Manhattan distance between two points.
 function manhattan(pt1: Vector, pt2: Vector): number {
-	return Math.abs(pt1.x - pt2.x) + Math.abs(pt1.y - pt2.y);
+    return Math.abs(pt1.x - pt2.x) + Math.abs(pt1.y - pt2.y);
 }
 
 function same_edge(edge_1: Edge, edge_2: Edge): boolean {
-	let threshold = 0.1;
-	
-	if (manhattan(edge_1.v1, edge_2.v1) < threshold && manhattan(edge_1.v2, edge_2.v2) < threshold) return true;
-	if (manhattan(edge_1.v1, edge_2.v2) < threshold && manhattan(edge_1.v2, edge_2.v1) < threshold) return true;
-	return false;
+    let threshold = 0.1;
+    
+    if (manhattan(edge_1.v1, edge_2.v1) < threshold && manhattan(edge_1.v2, edge_2.v2) < threshold) return true;
+    if (manhattan(edge_1.v1, edge_2.v2) < threshold && manhattan(edge_1.v2, edge_2.v1) < threshold) return true;
+    return false;
 }
 
 function edges_intersect(edge_1: Edge, edge_2: Edge): boolean {
@@ -623,6 +657,8 @@ function remove_by_value(array: any, element: any): void {
     }
 }
 
+function cut_polygons(): void {}
+
 function mouse_up(x: number, y: number): void {
     mouse_is_down = false;
     old_pan_offset_x += pan_offset_x;
@@ -631,30 +667,40 @@ function mouse_up(x: number, y: number): void {
     pan_offset_y = 0;
     
     if (!panned) {
-        if (closest_edge != undefined) {
-            let result = add_polygon(closest_edge, current_template);
-            if (result) closest_edge = undefined;
-        }
-        
-        if (hovered_polygon != undefined) {
-            for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
-                if (polygons[polygon_i] === hovered_polygon) {
-                    polygons.splice(polygon_i, 1);
-                    
-                    for (var edge of hovered_polygon.edges) {
-                        if (edge.polygon1 === hovered_polygon) edge.polygon1 = undefined;
-                        if (edge.polygon2 === hovered_polygon) edge.polygon2 = undefined;
+        if (hovered_vertex != undefined) {
+            if (selected_vertex == undefined) {
+                selected_vertex = hovered_vertex;
+            } else {
+                cut_polygons();
+                selected_vertex = undefined;
+                hovered_vertex = undefined;
+            }
+        } else {
+            if (closest_edge != undefined) {
+                let result = add_polygon(closest_edge, current_template);
+                if (result) closest_edge = undefined;
+            }
+            
+            if (hovered_polygon != undefined) {
+                for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+                    if (polygons[polygon_i] === hovered_polygon) {
+                        polygons.splice(polygon_i, 1);
                         
-                        if (edge.polygon1 == undefined && edge.polygon2 == undefined) {
-                            remove_by_value(edges, edge);
-                            remove_by_value(open_edges, edge);
-                        } else {
-                            open_edges.push(edge);
+                        for (var edge of hovered_polygon.edges) {
+                            if (edge.polygon1 === hovered_polygon) edge.polygon1 = undefined;
+                            if (edge.polygon2 === hovered_polygon) edge.polygon2 = undefined;
+                            
+                            if (edge.polygon1 == undefined && edge.polygon2 == undefined) {
+                                remove_by_value(edges, edge);
+                                remove_by_value(open_edges, edge);
+                            } else {
+                                open_edges.push(edge);
+                            }
                         }
+                        
+                        hovered_polygon = undefined;
+                        break;
                     }
-                    
-                    hovered_polygon = undefined;
-                    break;
                 }
             }
         }
@@ -672,14 +718,14 @@ function point_is_on_inner_side(vertex1: Vector, vertex2: Vector, point: Vector)
 }
 
 function point_inside_polygon(point: Vector, polygon: Polygon): boolean {
-	for (let vertex_i = 0; vertex_i < polygon.vertices.length; vertex_i += 1) {
+    for (let vertex_i = 0; vertex_i < polygon.vertices.length; vertex_i += 1) {
         let vertex = polygon.vertices[vertex_i];
         let next_vertex = polygon.vertices[(vertex_i + 1) % polygon.vertices.length];
         
-		if (!point_is_on_inner_side(vertex, next_vertex, point)) return false;
-	}
+        if (!point_is_on_inner_side(vertex, next_vertex, point)) return false;
+    }
     
-	return true;
+    return true;
 }
 
 // The Euclid distance between two points.
@@ -693,21 +739,31 @@ function mouse_move(x: number, y: number): void {
         pan_offset_y = y - mouse_down_pos[1];
         panned = true;
     }
-	
-	mouse_world_coord = canvas_to_world({x: x, y: y});
     
-	let found: boolean = false;
-	for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
-		if (point_inside_polygon(mouse_world_coord, polygons[polygon_i])) {
-			hovered_polygon = polygons[polygon_i];
+    mouse_world_coord = canvas_to_world({x: x, y: y});
+    
+    let found_hovered_vertex = false;
+    
+    let found: boolean = false;
+    for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+        for (var vertex of polygons[polygon_i].vertices) {
+            if (euclid(vertex, mouse_world_coord) < 0.2) {
+                hovered_vertex = vertex;
+                found_hovered_vertex = true;
+            }
+        }
+        
+        
+        if (point_inside_polygon(mouse_world_coord, polygons[polygon_i])) {
+            hovered_polygon = polygons[polygon_i];
             closest_edge = undefined;
-			found = true;
-			break;
-		}
-	}
-	
-	if (!found) {
-		hovered_polygon = undefined;
+            found = true;
+            break;
+        }
+    }
+    
+    if (!found) {
+        hovered_polygon = undefined;
         let min_dist = Number.MAX_VALUE;
         for (var edge of open_edges) {
             let dist = euclid(mouse_world_coord, edge.v1) + euclid(mouse_world_coord, edge.v2);
@@ -716,11 +772,13 @@ function mouse_move(x: number, y: number): void {
                 closest_edge = edge;
             }
         }
-	}
+    }
+    
+    if (!found_hovered_vertex) hovered_vertex = undefined;
 }
 
 function space_down(): void {
-	if (hovered_polygon != undefined) {
+    if (hovered_polygon != undefined) {
         current_template = {vertices: hovered_polygon.vertices};
     }
 }
@@ -729,4 +787,6 @@ function mouse_scroll(direction: number): void {
     scale += direction * 0.1;
 }
 
-create_foam();
+//create_foam();
+let first_edge: Edge = {v1: {x: 0, y: 0}, v2: {x: 1, y: 0}, polygon1: undefined, polygon2: undefined};
+add_polygon(first_edge, triangle_template);
