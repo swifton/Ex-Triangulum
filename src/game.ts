@@ -88,7 +88,29 @@ let debug_edge_1: Vector[] = undefined;
 let debug_edge_2: Vector[] = undefined;
 let debug_edge_3: Vector[] = undefined;
 
+
+let triangle_template: Polygon_Template = {vertices: [{x: 0, y: 0}, {x: 0.5, y: Math.sqrt(3)/2}, {x: 1, y: 0}]};
+
 let square_template: Polygon_Template = {vertices: [{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 1, y: 0}]};
+
+let hexagon_template: Polygon_Template = {vertices: [{x: 0, y: 0}, 
+                                                     {x: 0.5, y: Math.sqrt(3)/2}, 
+                                                     {x: 1.5, y: Math.sqrt(3)/2}, 
+                                                     {x: 2, y: 0}, 
+                                                     {x: 1.5, y: -Math.sqrt(3)/2},
+                                                     {x: 0.5, y: -Math.sqrt(3)/2}]};
+
+let octagon_template: Polygon_Template = {vertices: [{x: 0, y: 0}, 
+                                                     {x: 0, y: 1}, 
+                                                     {x: Math.sqrt(2) / 2, y: 1 + Math.sqrt(2) / 2}, 
+                                                     {x: 1 + Math.sqrt(2) / 2, y: 1 + Math.sqrt(2) / 2}, 
+                                                     {x: 1 + 2*Math.sqrt(2) / 2, y: 1}, 
+                                                     {x: 1 + 2*Math.sqrt(2) / 2, y: 0}, 
+                                                     {x: 1 + Math.sqrt(2) / 2, y: -Math.sqrt(2) / 2}, 
+                                                     {x: Math.sqrt(2) / 2, y: -Math.sqrt(2) / 2}]};
+
+let templates = [triangle_template, square_template, hexagon_template, octagon_template];
+
 
 // let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
 let test_transform_edge_1: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
@@ -364,7 +386,7 @@ function create_foam() {
 	for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
 		edge_i = random_integer(0, open_edges.length);
 		// last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
-		// add_polygon(open_edges[edge_i], types[random_integer(0, types.length)]);
+        add_polygon(open_edges[edge_i], random_integer(0, types.length));
 	}
     
     let transformation = find_transformation(test_transform_edge_1, test_transform_edge_2);
@@ -450,14 +472,14 @@ function add_polygon(edge: Edge, type: number): boolean {
     */
     
     let polygon_vertices = [];
-    let p_template = square_template;
+    let p_template = templates[type];
+    console.log("TYPE: " + type.toString());
     let target_edge: Edge = {v1: starting_v2, v2: starting_v1, polygon1: undefined, polygon2: undefined};
     let first_template_edge: Edge = {v1: p_template.vertices[0], v2: p_template.vertices[1], polygon1: undefined, polygon2: undefined};
     let transformation = find_transformation(first_template_edge, target_edge);
     
     for (let vertex_i = 0; vertex_i < p_template.vertices.length; vertex_i += 1) {
         let p_vertex = transform(p_template.vertices[vertex_i], transformation);
-        console.log(p_vertex);
         polygon_vertices.push(p_vertex);
     }
     
