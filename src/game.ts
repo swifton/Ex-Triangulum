@@ -689,18 +689,103 @@ function cut_polygons(): void {
         let new_vertex = sum(mul(v1, alpha), mul(v2, 1 - alpha));
         to_cut.push([new_vertex, edge_i, euclid(new_vertex, v1)]);
     }
+    
     to_cut.push([v2, undefined, euclid(v2, v1)]);
+    to_cut.push([v1, undefined, 0]);
     
     // Sorting by distance to v1 in ascending order.
     to_cut.sort(function compare(a, b) {return a[2] - b[2]});
     
-    let old_v = v1;
-    for (var tup of to_cut) {
-        open_edges.push({v1: {x: old_v.x, y: old_v.y}, v2: tup[0], polygon1: undefined, polygon2: undefined});
-        old_v = tup[0];
+    // Cutting all polygons that the line intersects.
+    let old_tup = to_cut[0];
+    let old_edges = undefined;
+    for (var tup_i = 1; tup_i < to_cut.length; tup_i += 1) {
+        let tup = to_cut[tup_i];
+        let old_v: Vector = old_tup[0];
+        //open_edges.push({v1: {x: old_v.x, y: old_v.y}, v2: tup[0], polygon1: undefined, polygon2: undefined});
+        let polygon_1_vxs = [];
+        let polygon_2_vxs = [];
+        
+        if (tup[1] != undefined) {
+            let edge = edges[tup[1]];
+            //open_edges.push({v1: {x: edge.v1.x, y: edge.v1.y}, v2: tup[0], polygon1: undefined, polygon2: undefined});
+            //open_edges.push({v1: {x: edge.v2.x, y: edge.v2.y}, v2: tup[0], polygon1: undefined, polygon2: undefined});
+        }
+        
+        // Case 1: The line enters and exits a polygon through an edge.
+        if (tup[1] != undefined && old_tup[1] != undefined) {
+            let polygon_to_cut: Polygon;
+            let edge_1 = edges[tup[1]];
+            let edge_2 = edges[old_tup[1]];
+            
+            polygon_1_vxs = [{x: tup[0].x, y: tup[0].y}];
+            polygon_2_vxs = [{x: old_tup[0].x, y: old_tup[0].y}];
+            let start_1: Vector; // The first vertex of the first polygon (other than the new vx).
+            let end_1: Vector;   // The last vertex.
+            let start_2: Vector;
+            let end_2: Vector;
+            
+            if (edge_1.polygon1 == edge_2.polygon1) {
+                console.log("Case 1");
+                polygon_to_cut = edge_1.polygon1;
+                start_1 = edge_1.v2;
+                end_2   = edge_1.v1;
+                end_1   = edge_2.v1;
+                start_2 = edge_2.v2;
+            } else if (edge_1.polygon1 == edge_2.polygon2) {
+                console.log("Case 2");
+                polygon_to_cut = edge_1.polygon1;
+                start_1 = edge_1.v2;
+                end_2   = edge_1.v1;
+                end_1   = edge_2.v2;
+                start_2 = edge_2.v1;
+            } else if (edge_1.polygon2 == edge_2.polygon1) {
+                console.log("Case 3");
+                polygon_to_cut = edge_1.polygon2;
+                start_1 = edge_1.v1;
+                end_2   = edge_1.v2;
+                end_1   = edge_2.v1;
+                start_2 = edge_2.v2;
+            } else if (edge_1.polygon2 == edge_2.polygon2) {
+                console.log("Case 4");
+                polygon_to_cut = edge_1.polygon2;
+                start_1 = edge_1.v1;
+                end_2   = edge_1.v2;
+                end_1   = edge_2.v2;
+                start_2 = edge_2.v1;
+            } else console.log("ERROR: The edges don't have a polygon in common.");
+            
+            let start_i: number = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_1));
+            for (;!same_vertex(polygon_to_cut.vertices[start_i], end_1); start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
+                polygon_1_vxs.push(polygon_to_cut.vertices[start_i]);
+            }
+            polygon_1_vxs.push(end_1);
+            polygon_1_vxs.push({x: old_tup[0].x, y: old_tup[0].y});
+            
+            
+            console.log("Second polygon.");
+            start_i = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_2));
+            for (;!same_vertex(polygon_to_cut.vertices[start_i], end_2); start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
+                polygon_2_vxs.push(polygon_to_cut.vertices[start_i]);
+            }
+            polygon_2_vxs.push(end_2);
+            polygon_2_vxs.push({x: tup[0].x, y: tup[0].y});
+            
+            polygons.push(new Polygon(polygon_1_vxs));
+            polygons.push(new Polygon(polygon_2_vxs));
+            
+            for (var polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+                if (polygons[polygon_i] == polygon_to_cut) {
+                    polygons.splice(polygon_i, 1);
+                    break;
+                }
+            }
+        }
+        
+        old_tup = tup;
     }
     
-    
+    console.log(polygons);
 }
 
 function mouse_up(x: number, y: number): void {
