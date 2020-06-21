@@ -428,6 +428,7 @@ function add_polygon(edge: Edge, type: number): boolean {
         starting_v2 = edge.v1;
     }
     
+    /*
     let old_edge = {x: starting_v1.x - starting_v2.x, y: starting_v1.y - starting_v2.y};
 	let polygon_vertices = [starting_v2, starting_v1];
 	let angle = Math.PI * (1 - (type - 2) / type);
@@ -446,6 +447,20 @@ function add_polygon(edge: Edge, type: number): boolean {
 		vx = new_vx;
 		old_edge = new_edge;
 	}
+    */
+    
+    let polygon_vertices = [];
+    let p_template = square_template;
+    let target_edge: Edge = {v1: starting_v2, v2: starting_v1, polygon1: undefined, polygon2: undefined};
+    let first_template_edge: Edge = {v1: p_template.vertices[0], v2: p_template.vertices[1], polygon1: undefined, polygon2: undefined};
+    let transformation = find_transformation(first_template_edge, target_edge);
+    
+    for (let vertex_i = 0; vertex_i < p_template.vertices.length; vertex_i += 1) {
+        let p_vertex = transform(p_template.vertices[vertex_i], transformation);
+        console.log(p_vertex);
+        polygon_vertices.push(p_vertex);
+    }
+    
     
     // Checking that each vertex has enough space around it for the polygon.
     for (let vx_i = 1; vx_i < polygon_vertices.length; vx_i += 1) {
