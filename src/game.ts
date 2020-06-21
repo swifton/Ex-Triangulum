@@ -64,10 +64,6 @@ let canvas_center = [0, 0];
 let polygons: Polygon[];
 let open_edges: Edge[] = [];
 let edges: Edge[] = [];
-// let vertices: Vertex[] = [];
-
-let colors: String[] = ["red", "green", "blue", "yellow", "magenta", "cyan"];
-let types: number[] = [3, 4, 6, 8];
 
 let mouse_down_pos: number[];
 let pan_offset_x: number = 0;
@@ -104,12 +100,13 @@ let octagon_template: Polygon_Template = {vertices: [{x: 0, y: 0},
                                                      {x: 0, y: 1}, 
                                                      {x: Math.sqrt(2) / 2, y: 1 + Math.sqrt(2) / 2}, 
                                                      {x: 1 + Math.sqrt(2) / 2, y: 1 + Math.sqrt(2) / 2}, 
-                                                     {x: 1 + 2*Math.sqrt(2) / 2, y: 1}, 
-                                                     {x: 1 + 2*Math.sqrt(2) / 2, y: 0}, 
+                                                     {x: 1 + Math.sqrt(2), y: 1}, 
+                                                     {x: 1 + Math.sqrt(2), y: 0}, 
                                                      {x: 1 + Math.sqrt(2) / 2, y: -Math.sqrt(2) / 2}, 
                                                      {x: Math.sqrt(2) / 2, y: -Math.sqrt(2) / 2}]};
 
 let templates = [triangle_template, square_template, hexagon_template, octagon_template];
+let current_template: Polygon_Template = triangle_template;
 
 
 // let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
@@ -158,6 +155,8 @@ function render() {
 		main_context.fill();
 		main_context.stroke();
         
+        /*
+// Visualizing and labeling the center of the polygon.
         main_context.fillStyle = "orange";
         // main_context.beginPath();
         let canv_v = world_to_canvas(polygon.center);
@@ -166,7 +165,7 @@ function render() {
         // main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
         // main_context.fill();
         main_context.fillStyle = "green";
-        
+        */
         
         /*
         */
@@ -187,6 +186,7 @@ function render() {
 	}
 	main_context.stroke();
 	
+    /*
 	// Drawing the last edge for debugging purposes
 	main_context.strokeStyle = "blue";
     
@@ -197,6 +197,7 @@ function render() {
 	main_context.moveTo(vx_1c.x, vx_1c.y);
 	main_context.lineTo(vx_2c.x, vx_2c.y);
 	main_context.stroke();
+    */
     
     /*
 	// Drawing an edge for testing the inner side test
@@ -211,6 +212,7 @@ function render() {
 	main_context.stroke();
     */
     
+    /*
 	// Drawing edges for testing linear transform
 	main_context.strokeStyle = "blue";
     
@@ -231,7 +233,9 @@ function render() {
 	main_context.moveTo(vx_1c.x, vx_1c.y);
 	main_context.lineTo(vx_2c.x, vx_2c.y);
 	main_context.stroke();
+    */
     
+    /*
 	// Visualizing the mouse position.
 	// if (point_is_on_inner_side(test_inner_side_edge.v1, test_inner_side_edge.v2, mouse_world_coord)) main_context.fillStyle = "red";
     // else main_context.fillStyle = "blue";
@@ -240,6 +244,7 @@ function render() {
 	let mouse_canvas_coord = world_to_canvas(mouse_world_coord);
 	main_context.arc(mouse_canvas_coord.x, mouse_canvas_coord.y, 5, 0, 2 * Math.PI);
 	main_context.fill();
+    */
     
 	if (hovered_polygon != undefined) {
 		main_context.beginPath();
@@ -258,6 +263,8 @@ function render() {
 		main_context.fill();
 	}
 	
+    /*
+// Visualizing poygon1 and polygon2 for each edge for testing and debugging.
     for (var edge of edges) {
         let edge_center = sum(edge.v1, edge.v2);
         edge_center =  mul(edge_center, 0.5);
@@ -285,6 +292,7 @@ function render() {
             main_context.stroke();
         }
     }
+    */
     
 	if (closest_edge != undefined) {
         // Drawing the edge closest to the mouse
@@ -300,6 +308,7 @@ function render() {
     }
     
     /*
+// Vertex labels for debugging
     main_context.fillStyle = "orange";
     for (var vertex_i in vertices) {
         let vertex = vertices[vertex_i];
@@ -313,6 +322,8 @@ function render() {
     }
     */
     
+    /*
+// Edge labels for debugging.
     main_context.fillStyle = "orange";
     for (var edge_i = 0; edge_i < open_edges.length; edge_i += 1) {
         let edge = open_edges[edge_i];
@@ -321,7 +332,10 @@ function render() {
         main_context.font = '10px serif';
         main_context.fillText(edge_i.toString(), label_canv.x, label_canv.y);
     }
+    */
     
+    /*
+// Edges for debugging polygon collisions
     if (debug_edge_1 != undefined) {
         main_context.strokeStyle = "cyan";
         
@@ -354,6 +368,7 @@ function render() {
         main_context.stroke();
         
     }
+    */
     
     main_context.restore();
 }
@@ -386,7 +401,7 @@ function create_foam() {
 	for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
 		edge_i = random_integer(0, open_edges.length);
 		// last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
-        add_polygon(open_edges[edge_i], random_integer(0, types.length));
+        add_polygon(open_edges[edge_i], templates[random_integer(0, templates.length)]);
 	}
     
     let transformation = find_transformation(test_transform_edge_1, test_transform_edge_2);
@@ -438,7 +453,7 @@ function transform(point: Vector, transformation: Transformation): Vector {
     return {x: x_new, y: y_new};
 }
 
-function add_polygon(edge: Edge, type: number): boolean {
+function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
     let starting_v1: Vector;
     let starting_v2: Vector;
     
@@ -450,30 +465,7 @@ function add_polygon(edge: Edge, type: number): boolean {
         starting_v2 = edge.v1;
     }
     
-    /*
-    let old_edge = {x: starting_v1.x - starting_v2.x, y: starting_v1.y - starting_v2.y};
-	let polygon_vertices = [starting_v2, starting_v1];
-	let angle = Math.PI * (1 - (type - 2) / type);
-	let vx = starting_v1;
-	let angle_15 = 12 * (type - 2) / type;
-	
-    // Constructing the vertices of the future polygon.
-	for (let edgee_i = 0; edgee_i < type - 2; edgee_i += 1) {
-		let new_edge = mul(old_edge, Math.cos(angle));
-		let orth = {x: old_edge.y, y: -old_edge.x};
-		new_edge = sum(new_edge, mul(orth, Math.sin(angle)));
-        let new_vx = sum(vx, new_edge);
-		
-		polygon_vertices.push(new_vx);
-		
-		vx = new_vx;
-		old_edge = new_edge;
-	}
-    */
-    
     let polygon_vertices = [];
-    let p_template = templates[type];
-    console.log("TYPE: " + type.toString());
     let target_edge: Edge = {v1: starting_v2, v2: starting_v1, polygon1: undefined, polygon2: undefined};
     let first_template_edge: Edge = {v1: p_template.vertices[0], v2: p_template.vertices[1], polygon1: undefined, polygon2: undefined};
     let transformation = find_transformation(first_template_edge, target_edge);
@@ -640,7 +632,7 @@ function mouse_up(x: number, y: number): void {
     
     if (!panned) {
         if (closest_edge != undefined) {
-            let result = add_polygon(closest_edge, to_add_type);
+            let result = add_polygon(closest_edge, current_template);
             if (result) closest_edge = undefined;
         }
         
@@ -729,7 +721,7 @@ function mouse_move(x: number, y: number): void {
 
 function space_down(): void {
 	if (hovered_polygon != undefined) {
-        to_add_type = hovered_polygon.vertices.length;
+        current_template = {vertices: hovered_polygon.vertices};
     }
 }
 
