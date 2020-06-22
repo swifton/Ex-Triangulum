@@ -914,11 +914,13 @@ function mouse_move(x: number, y: number): void {
     if (!found) {
         hovered_polygon = undefined;
         let min_dist = Number.MAX_VALUE;
-        for (var edge of open_edges) {
-            let dist = euclid(mouse_world_coord, edge.v1) + euclid(mouse_world_coord, edge.v2);
-            if (min_dist > dist) {
-                min_dist = dist;
-                closest_edge = edge;
+        for (var polygon of polygons) {
+            for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
+                let dist = euclid(mouse_world_coord, polygon.vertices[vx_i]) + euclid(mouse_world_coord, polygon.vertices[(vx_i + 1) % polygon.vertices.length]);
+                if (min_dist > dist) {
+                    min_dist = dist;
+                    closest_edge = {v1: polygon.vertices[vx_i], v2: polygon.vertices[(vx_i + 1) % polygon.vertices.length], polygon1: polygon, polygon2: undefined};
+                }
             }
         }
     }
