@@ -434,7 +434,7 @@ function create_foam() {
         let vx_i = random_integer(0, polygon.length);
         edge_i = random_integer(0, open_edges.length);
         // last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
-        let edge:Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length], polygon1: undefined, polygon2: undefined};
+        let edge: Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length], polygon1: polygons[polygon_i], polygon2: undefined};
         //add_polygon(open_edges[edge_i], templates[random_integer(0, templates.length)]);
         add_polygon(edge, templates[random_integer(0, templates.length)]);
     }
@@ -509,12 +509,22 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
     let starting_v1: Vector;
     let starting_v2: Vector;
     
+    
     if (edge.polygon2 == undefined) {
         starting_v1 = edge.v1;
         starting_v2 = edge.v2;
     } else {
         starting_v1 = edge.v2;
         starting_v2 = edge.v1;
+    }
+    
+    for (var polygon of polygons) {
+        for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
+            let vx1 = polygon.vertices[vx_i];
+            let vx2 = polygon.vertices[(vx_i + 1) % polygon.vertices.length];
+            if (same_vertex(vx1, starting_v1) && same_vertex(vx2, starting_v2) && polygon != edge.polygon1) return false;
+            if (same_vertex(vx1, starting_v2) && same_vertex(vx2, starting_v1) && polygon != edge.polygon1) return false;
+        }
     }
     
     let polygon_vertices = [];
@@ -526,7 +536,6 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
         let p_vertex = transform(p_template.vertices[vertex_i], transformation);
         polygon_vertices.push(p_vertex);
     }
-    
     
     // Checking that each vertex has enough space around it for the polygon.
     for (let vx_i = 1; vx_i < polygon_vertices.length; vx_i += 1) {
