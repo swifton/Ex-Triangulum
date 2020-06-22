@@ -765,12 +765,38 @@ function cut_polygons(): void {
             polygon_2_vxs.push(end_2);
             polygon_2_vxs.push({x: tup[0].x, y: tup[0].y});
             
-            polygons.push(new Polygon(polygon_1_vxs));
-            polygons.push(new Polygon(polygon_2_vxs));
+            let new_polygon_1 = new Polygon(polygon_1_vxs);
+            let new_polygon_2 = new Polygon(polygon_2_vxs);
+            polygons.push(new_polygon_1);
+            polygons.push(new_polygon_2);
             
+            // Reassigning edges
+            start_i = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_1));
+            for (var n_edges = 0; n_edges < polygon_1_vxs.length - 3; start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
+                n_edges += 1;
+                if (polygon_to_cut.edges[start_i].polygon1 == polygon_to_cut) polygon_to_cut.edges[start_i].polygon1 = new_polygon_1;
+                if (polygon_to_cut.edges[start_i].polygon2 == polygon_to_cut) polygon_to_cut.edges[start_i].polygon2 = new_polygon_1;
+            }
+            
+            start_i = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_2));
+            for (var n_edges = 0; n_edges < polygon_2_vxs.length - 3; start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
+                n_edges += 1;
+                if (polygon_to_cut.edges[start_i].polygon1 == polygon_to_cut) polygon_to_cut.edges[start_i].polygon1 = new_polygon_2;
+                if (polygon_to_cut.edges[start_i].polygon2 == polygon_to_cut) polygon_to_cut.edges[start_i].polygon2 = new_polygon_2;
+            }
+            
+            // Deleting the old polygon
             for (var polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
                 if (polygons[polygon_i] == polygon_to_cut) {
                     polygons.splice(polygon_i, 1);
+                    break;
+                }
+            }
+            
+            // Deleting the old edges
+            for (var edge_i = 0; edge_i < edges.length; edge_i += 1) {
+                if (edges[edge_i] == edge_2) {
+                    edges.splice(edge_i, 1);
                     break;
                 }
             }
