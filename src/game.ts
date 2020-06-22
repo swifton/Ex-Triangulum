@@ -870,7 +870,7 @@ function mouse_move(x: number, y: number): void {
     let found: boolean = false;
     for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
         for (var vertex of polygons[polygon_i].vertices) {
-            if (euclid(vertex, mouse_world_coord) < 0.2) {
+            if (euclid(vertex, mouse_world_coord) < 10 / unit_pix) {
                 hovered_vertex = vertex;
                 found_hovered_vertex = true;
             }
