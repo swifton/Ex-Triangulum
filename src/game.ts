@@ -59,7 +59,7 @@ interface Vertex {
 	angle: number; // The multiple of 15 degrees
 }
 
-let unit_pix: number = 50;
+let unit_pix: number = 200;
 let canvas_center = [0, 0];
 let polygons: Polygon[] = [];
 let open_edges: Edge[] = [];
@@ -70,7 +70,6 @@ let pan_offset_x: number = 0;
 let pan_offset_y: number = 0;
 let old_pan_offset_x: number = 0;
 let old_pan_offset_y: number = 0;
-let scale: number = 1;
 let panned = false;
 
 let last_edge: Edge;
@@ -128,8 +127,6 @@ function render() {
 	canvas_center[1] = main_canvas.height / 2 + pan_offset_y + old_pan_offset_y;
     
 	// Setting up canvas parameters that pertain to all drawing.
-    main_context.save();
-    main_context.scale(scale, scale);
 	main_context.globalAlpha = 1;
 	main_context.lineWidth = 2;
 	
@@ -237,7 +234,7 @@ function render() {
 	main_context.stroke();
     */
     
-    /*
+    
 	// Visualizing the mouse position.
 	// if (point_is_on_inner_side(test_inner_side_edge.v1, test_inner_side_edge.v2, mouse_world_coord)) main_context.fillStyle = "red";
     // else main_context.fillStyle = "blue";
@@ -246,7 +243,7 @@ function render() {
 	let mouse_canvas_coord = world_to_canvas(mouse_world_coord);
 	main_context.arc(mouse_canvas_coord.x, mouse_canvas_coord.y, 5, 0, 2 * Math.PI);
 	main_context.fill();
-    */
+    
     
 	if (hovered_polygon != undefined) {
         main_context.fillStyle = "red";
@@ -266,8 +263,8 @@ function render() {
 		main_context.fill();
 	}
 	
-    /*
-// Visualizing poygon1 and polygon2 for each edge for testing and debugging.
+    
+    // Visualizing poygon1 and polygon2 for each edge for testing and debugging.
     for (var edge of edges) {
         let edge_center = sum(edge.v1, edge.v2);
         edge_center =  mul(edge_center, 0.5);
@@ -295,7 +292,7 @@ function render() {
             main_context.stroke();
         }
     }
-    */
+    
     
 	if (closest_edge != undefined) {
         // Drawing the edge closest to the mouse
@@ -401,8 +398,6 @@ function render() {
         main_context.lineTo(hovered_c.x, hovered_c.y);
         main_context.stroke();
     }
-    
-    main_context.restore();
 }
 
 function canvas_to_world(canvas_point: Vector): Vector {
@@ -755,6 +750,7 @@ function cut_polygons(): void {
                 start_2 = edge_2.v1;
             } else console.log("ERROR: The edges don't have a polygon in common.");
             
+            // Adding the vertices to polygons.
             let start_i: number = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_1));
             for (;!same_vertex(polygon_to_cut.vertices[start_i], end_1); start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
                 polygon_1_vxs.push(polygon_to_cut.vertices[start_i]);
@@ -762,8 +758,6 @@ function cut_polygons(): void {
             polygon_1_vxs.push(end_1);
             polygon_1_vxs.push({x: old_tup[0].x, y: old_tup[0].y});
             
-            
-            console.log("Second polygon.");
             start_i = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_2));
             for (;!same_vertex(polygon_to_cut.vertices[start_i], end_2); start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
                 polygon_2_vxs.push(polygon_to_cut.vertices[start_i]);
@@ -913,7 +907,7 @@ function space_down(): void {
 }
 
 function mouse_scroll(direction: number): void {
-    scale += direction * 0.1;
+    unit_pix += direction * 10;
 }
 
 //create_foam();
