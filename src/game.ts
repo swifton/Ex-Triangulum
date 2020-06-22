@@ -415,7 +415,9 @@ function world_to_canvas(world_point: Vector): Vector {
 function create_foam() {
     let first_polygon = new Polygon([{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 1, y: 0}]);
     polygons = [first_polygon];
+    console.log("1");
     add_polygon(first_edge, triangle_template);
+    console.log("2");
     
     open_edges = [];
     let edge_i;
@@ -427,9 +429,14 @@ function create_foam() {
     last_edge = first_polygon.edges[0];
     
     for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
+        let polygon_i = random_integer(0, polygons.length);
+        let polygon = polygons[polygon_i].vertices;
+        let vx_i = random_integer(0, polygon.length);
         edge_i = random_integer(0, open_edges.length);
         // last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
-        add_polygon(open_edges[edge_i], templates[random_integer(0, templates.length)]);
+        let edge:Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length], polygon1: undefined, polygon2: undefined};
+        //add_polygon(open_edges[edge_i], templates[random_integer(0, templates.length)]);
+        add_polygon(edge, templates[random_integer(0, templates.length)]);
     }
     
     let transformation = find_transformation(test_transform_edge_1, test_transform_edge_2);
@@ -481,6 +488,22 @@ function transform(point: Vector, transformation: Transformation): Vector {
     
     return {x: x_new, y: y_new};
 }
+
+/*
+function polygons_intersect(p1: Polygon, p2: Polygon): boolean {
+    for (let v1_i = 0; v1_i < p1.length; v1_i += 1) {
+        for (let v2_i = 0; v2_i < p1.length; v2_i += 1) {
+            let v1 = p1.vertices[v1_i];
+            let v2 = p1.vertices[(v1_i + 1) & p1.vertices.length];
+            let v3 = p2.vertices[v2_i];
+            let v4 = p2.vertices[(v2_i + 1) & p2.vertices.length];
+            if (segments_intersect(v1, v2, v3, v4)) return false;
+        }
+    }
+    
+    return false;
+}
+*/
 
 function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
     let starting_v1: Vector;
@@ -557,20 +580,32 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
     
     let new_polygon = new Polygon(polygon_vertices);
     
-    // Checking that edges of the new polygon don't intersect with outer edges 
+    // Checking that edges of the new polygon don't intersect with edges 
     // of existing polygons.
-    for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
-        for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
-            let edg = open_edges[edg_i];
-            let edge = new_polygon.edges[edge_i];
-            if (edges_intersect(edg, edge)) {
-                console.log("Edge " + edg_i + " is in the way.");
-                if (!same_vertex(edge.v1, edg.v1) && !same_vertex(edge.v1, edg.v2) && !same_vertex(edge.v2, edg.v1) && !same_vertex(edge.v2, edg.v2)) return false;
-                console.log("Exit prevented."); 
+    for (let v1_i = 0; v1_i < new_polygon.vertices.length; v1_i += 1) {
+        let v1 = new_polygon.vertices[v1_i];
+        let v2 = new_polygon.vertices[(v1_i + 1) % new_polygon.vertices.length];
+        let edge_to_check:Edge = {v1: v1, v2: v2, polygon1: undefined, polygon2: undefined}
+        for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+            let old_polygon = polygons[polygon_i];
+            
+            for (let v3_i = 0; v3_i < old_polygon.vertices.length; v3_i += 1) {
+                let v3 = old_polygon.vertices[v3_i];
+                let v4 = old_polygon.vertices[(v3_i + 1) % old_polygon.vertices.length];
+                let old_edge_to_check: Edge = {v1: v3, v2: v4, polygon1: undefined, polygon2: undefined}
+                if (edges_intersect(edge_to_check, old_edge_to_check)) {
+                    console.log("Polygon " + polygon_i + " is in the way.");
+                    if (!same_vertex(edge_to_check.v1, old_edge_to_check.v1) && 
+                        !same_vertex(edge_to_check.v1, old_edge_to_check.v2) && 
+                        !same_vertex(edge_to_check.v2, old_edge_to_check.v1) && 
+                        !same_vertex(edge_to_check.v2, old_edge_to_check.v2)) return false;
+                    console.log("Exit prevented."); 
+                }
             }
         }
     }
     
+    /*
     // If some of the edges coincide with existing edges, pick the existing edge instead
     // of creating a new one. Make it unavailable for new polygons.
     for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
@@ -592,6 +627,7 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
             edges.push(edge_to_check);
         }
     }
+    */
     
     polygons.push(new_polygon);
     console.log("Success!");
@@ -627,6 +663,26 @@ function edges_intersect(edge_1: Edge, edge_2: Edge): boolean {
     let y3 = edge_2.v1.y;
     let x4 = edge_2.v2.x;
     let y4 = edge_2.v2.y;
+    
+    let side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1);
+    let side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1);
+    
+    let side3 = (x1 - x3) * (y3 - y4) - (x3 - x4) * (y1 - y3);
+    let side4 = (x2 - x3) * (y3 - y4) - (x3 - x4) * (y2 - y3);
+    
+    return side1 * side2 < 0 && side3 * side4 < 0;
+}
+
+function segments_intersect(v1: Vector, v2: Vector, v3: Vector, v4: Vector): boolean {
+    let x1 = v1.x;
+    let y1 = v1.y;
+    let x2 = v2.x;
+    let y2 = v2.y;
+    
+    let x3 = v3.x;
+    let y3 = v3.y;
+    let x4 = v4.x;
+    let y4 = v4.y;
     
     let side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1);
     let side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1);
@@ -938,6 +994,6 @@ function mouse_scroll(direction: number): void {
     unit_pix += direction * 10;
 }
 
-//create_foam();
 let first_edge: Edge = {v1: {x: 0, y: 0}, v2: {x: 1, y: 0}, polygon1: undefined, polygon2: undefined};
-add_polygon(first_edge, triangle_template);
+create_foam();
+// add_polygon(first_edge, triangle_template);
