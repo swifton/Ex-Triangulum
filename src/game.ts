@@ -110,7 +110,7 @@ let templates = [triangle_template, square_template, hexagon_template, octagon_t
 let current_template: Polygon_Template = triangle_template;
 
 
-// let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
+let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
 let test_transform_edge_1: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
 let test_transform_edge_2: Edge = {v1: {x: 4, y: 3}, v2: {x: 2, y: 4}, polygon1: undefined, polygon2:undefined};
 
@@ -137,6 +137,43 @@ function render() {
 	// Drawing polygons
 	for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
 		let polygon = polygons[polygon_i];
+        
+		main_context.beginPath();
+        
+		// Move to the last vertex of the polygon
+		let last_vx = polygon.vertices[polygon.vertices.length - 1];
+		let last_vx_canvas = world_to_canvas(last_vx);
+		main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
+        
+		// Looping over vertices, drawing the edge to each vertex.
+		for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
+			let vx_c = world_to_canvas(polygon.vertices[vx_i]);
+			main_context.lineTo(vx_c.x, vx_c.y);
+		}
+        
+		main_context.fill();
+		main_context.stroke();
+        
+        /*
+// Visualizing and labeling the center of the polygon.
+        main_context.fillStyle = "orange";
+        // main_context.beginPath();
+        let canv_v = world_to_canvas(polygon.center);
+        main_context.font = '10px serif';
+        main_context.fillText(polygon_i.toString(), canv_v.x, canv_v.y);
+        // main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
+        // main_context.fill();
+        main_context.fillStyle = "green";
+        */
+        
+        /*
+        */
+    }
+	
+    main_context.fillStyle = "magenta";
+	// Drawing polygons
+	for (let polygon_i = 0; polygon_i < polygons_to_cut.length; polygon_i += 1) {
+		let polygon = polygons_to_cut[polygon_i];
         
 		main_context.beginPath();
         
@@ -198,18 +235,18 @@ function render() {
 	main_context.stroke();
     */
     
-    /*
+    
 	// Drawing an edge for testing the inner side test
 	main_context.strokeStyle = "blue";
     
 	main_context.beginPath();
-    vx_1c = world_to_canvas(test_inner_side_edge.v1);
-    vx_2c = world_to_canvas(test_inner_side_edge.v2);
+    let vx_1c = world_to_canvas(test_inner_side_edge.v1);
+    let vx_2c = world_to_canvas(test_inner_side_edge.v2);
     
 	main_context.moveTo(vx_1c.x, vx_1c.y);
 	main_context.lineTo(vx_2c.x, vx_2c.y);
 	main_context.stroke();
-    */
+    
     
     /*
 	// Drawing edges for testing linear transform
@@ -236,9 +273,9 @@ function render() {
     
     
 	// Visualizing the mouse position.
-	// if (point_is_on_inner_side(test_inner_side_edge.v1, test_inner_side_edge.v2, mouse_world_coord)) main_context.fillStyle = "red";
-    // else main_context.fillStyle = "blue";
-    main_context.fillStyle = "red";
+    if (point_is_on_line(test_inner_side_edge.v1, test_inner_side_edge.v2, mouse_world_coord)) main_context.fillStyle = "red";
+    else main_context.fillStyle = "blue";
+    //main_context.fillStyle = "red";
     main_context.beginPath();
 	let mouse_canvas_coord = world_to_canvas(mouse_world_coord);
 	main_context.arc(mouse_canvas_coord.x, mouse_canvas_coord.y, 5, 0, 2 * Math.PI);
@@ -436,7 +473,7 @@ function create_foam() {
         // last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
         let edge: Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length], polygon1: polygons[polygon_i], polygon2: undefined};
         //add_polygon(open_edges[edge_i], templates[random_integer(0, templates.length)]);
-        add_polygon(edge, templates[random_integer(0, templates.length)]);
+        // add_polygon(edge, templates[random_integer(0, templates.length)]);
     }
     
     let transformation = find_transformation(test_transform_edge_1, test_transform_edge_2);
@@ -717,6 +754,16 @@ function remove_by_value(array: any, element: any): void {
     }
 }
 
+// Tests whether the point is on the line between two points. 
+function point_is_on_line(vertex1: Vector, vertex2: Vector, point: Vector): boolean {
+    let vec1: Vector = {x: vertex2.x - vertex1.x, y: vertex2.y - vertex1.y};
+    let vec2: Vector = {x: point.x - vertex1.x, y: point.y - vertex1.y};
+    
+    let determinant = vec1.x * vec2.y - vec1.y * vec2.x;
+    return Math.abs(determinant) < 0.01;
+}
+
+let polygons_to_cut:Polygon[] = [];
 function cut_polygons(): void {
     // The vertex to cut the edge at, the edge index in the 'edges' array, the distance to v1.
     let to_cut: [Vector, number, number][] = [];
@@ -725,6 +772,37 @@ function cut_polygons(): void {
     let v1 = hovered_vertex;
     let v2 = selected_vertex;
     let w1 = sum(v1, mul(v2, -1));
+    
+    for (var polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+        let polygon = polygons[polygon_i];
+        // Detecting whether we need to cut the polygon.
+        
+        // Does the polygon have vertices on both sides of the line? 
+        let side1_present = false;
+        let side2_present = false;
+        
+        for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
+            let vx = polygon.vertices[vx_i];
+            if (point_is_on_inner_side(v1, v2, vx) && !point_is_on_line(v1, v2, vx)) {
+                side1_present = true;
+                if (side2_present) break;
+            }
+            if (!point_is_on_inner_side(v1, v2, vx) && !point_is_on_line(v1, v2, vx)) {
+                side2_present = true;
+                if (side1_present) break;
+            }
+        }
+        
+        if (!side1_present || !side2_present) continue;
+        
+        polygons_to_cut.push(polygon);
+        /*
+        if (polygons[polygon_i] == polygon_to_cut) {
+            polygons.splice(polygon_i, 1);
+            break;
+        }
+        */
+    }
     
     // Detecting which edges intersect with the line given by selected vertices.
     for (let edge_i = 0; edge_i < edges.length; edge_i += 1) {
@@ -750,127 +828,6 @@ function cut_polygons(): void {
         to_cut.push([new_vertex, edge_i, euclid(new_vertex, v1)]);
     }
     
-    to_cut.push([v2, undefined, euclid(v2, v1)]);
-    to_cut.push([v1, undefined, 0]);
-    
-    // Sorting by distance to v1 in ascending order.
-    to_cut.sort(function compare(a, b) {return a[2] - b[2]});
-    
-    // Cutting all polygons that the line intersects.
-    let old_tup = to_cut[0];
-    let old_edges = undefined;
-    for (var tup_i = 1; tup_i < to_cut.length; tup_i += 1) {
-        let tup = to_cut[tup_i];
-        let old_v: Vector = old_tup[0];
-        //open_edges.push({v1: {x: old_v.x, y: old_v.y}, v2: tup[0], polygon1: undefined, polygon2: undefined});
-        let polygon_1_vxs = [];
-        let polygon_2_vxs = [];
-        
-        if (tup[1] != undefined) {
-            let edge = edges[tup[1]];
-            //open_edges.push({v1: {x: edge.v1.x, y: edge.v1.y}, v2: tup[0], polygon1: undefined, polygon2: undefined});
-            //open_edges.push({v1: {x: edge.v2.x, y: edge.v2.y}, v2: tup[0], polygon1: undefined, polygon2: undefined});
-        }
-        
-        // Case 1: The line enters and exits a polygon through an edge.
-        if (tup[1] != undefined && old_tup[1] != undefined) {
-            let polygon_to_cut: Polygon;
-            let edge_1 = edges[tup[1]];
-            let edge_2 = edges[old_tup[1]];
-            
-            polygon_1_vxs = [{x: tup[0].x, y: tup[0].y}];
-            polygon_2_vxs = [{x: old_tup[0].x, y: old_tup[0].y}];
-            let start_1: Vector; // The first vertex of the first polygon (other than the new vx).
-            let end_1: Vector;   // The last vertex.
-            let start_2: Vector;
-            let end_2: Vector;
-            
-            if (edge_1.polygon1 == edge_2.polygon1) {
-                console.log("Case 1");
-                polygon_to_cut = edge_1.polygon1;
-                start_1 = edge_1.v2;
-                end_2   = edge_1.v1;
-                end_1   = edge_2.v1;
-                start_2 = edge_2.v2;
-            } else if (edge_1.polygon1 == edge_2.polygon2) {
-                console.log("Case 2");
-                polygon_to_cut = edge_1.polygon1;
-                start_1 = edge_1.v2;
-                end_2   = edge_1.v1;
-                end_1   = edge_2.v2;
-                start_2 = edge_2.v1;
-            } else if (edge_1.polygon2 == edge_2.polygon1) {
-                console.log("Case 3");
-                polygon_to_cut = edge_1.polygon2;
-                start_1 = edge_1.v1;
-                end_2   = edge_1.v2;
-                end_1   = edge_2.v1;
-                start_2 = edge_2.v2;
-            } else if (edge_1.polygon2 == edge_2.polygon2) {
-                console.log("Case 4");
-                polygon_to_cut = edge_1.polygon2;
-                start_1 = edge_1.v1;
-                end_2   = edge_1.v2;
-                end_1   = edge_2.v2;
-                start_2 = edge_2.v1;
-            } else console.log("ERROR: The edges don't have a polygon in common.");
-            
-            // Adding the vertices to polygons.
-            let start_i: number = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_1));
-            for (;!same_vertex(polygon_to_cut.vertices[start_i], end_1); start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
-                polygon_1_vxs.push(polygon_to_cut.vertices[start_i]);
-            }
-            polygon_1_vxs.push(end_1);
-            polygon_1_vxs.push({x: old_tup[0].x, y: old_tup[0].y});
-            
-            start_i = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_2));
-            for (;!same_vertex(polygon_to_cut.vertices[start_i], end_2); start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
-                polygon_2_vxs.push(polygon_to_cut.vertices[start_i]);
-            }
-            polygon_2_vxs.push(end_2);
-            polygon_2_vxs.push({x: tup[0].x, y: tup[0].y});
-            
-            let new_polygon_1 = new Polygon(polygon_1_vxs);
-            let new_polygon_2 = new Polygon(polygon_2_vxs);
-            polygons.push(new_polygon_1);
-            polygons.push(new_polygon_2);
-            
-            // Reassigning edges
-            start_i = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_1));
-            for (var n_edges = 0; n_edges < polygon_1_vxs.length - 3; start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
-                n_edges += 1;
-                if (polygon_to_cut.edges[start_i].polygon1 == polygon_to_cut) polygon_to_cut.edges[start_i].polygon1 = new_polygon_1;
-                if (polygon_to_cut.edges[start_i].polygon2 == polygon_to_cut) polygon_to_cut.edges[start_i].polygon2 = new_polygon_1;
-            }
-            
-            start_i = polygon_to_cut.vertices.findIndex(v => same_vertex(v, start_2));
-            for (var n_edges = 0; n_edges < polygon_2_vxs.length - 3; start_i = (start_i + 1) % polygon_to_cut.vertices.length) {
-                n_edges += 1;
-                if (polygon_to_cut.edges[start_i].polygon1 == polygon_to_cut) polygon_to_cut.edges[start_i].polygon1 = new_polygon_2;
-                if (polygon_to_cut.edges[start_i].polygon2 == polygon_to_cut) polygon_to_cut.edges[start_i].polygon2 = new_polygon_2;
-            }
-            
-            // Deleting the old polygon
-            for (var polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
-                if (polygons[polygon_i] == polygon_to_cut) {
-                    polygons.splice(polygon_i, 1);
-                    break;
-                }
-            }
-            
-            // Deleting the old edges
-            for (var edge_i = 0; edge_i < edges.length; edge_i += 1) {
-                if (edges[edge_i] == edge_2) {
-                    edges.splice(edge_i, 1);
-                    break;
-                }
-            }
-        }
-        
-        old_tup = tup;
-    }
-    
-    console.log(polygons);
 }
 
 function mouse_up(x: number, y: number): void {
