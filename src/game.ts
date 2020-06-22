@@ -41,7 +41,7 @@ class Polygon {
 	constructor(public vertices: Vector[]) {
 		this.edges = [];
 		for (let vx_i = 0; vx_i < vertices.length; vx_i += 1) {
-			this.edges.push({v1: vertices[vx_i], v2: vertices[(vx_i + 1) % vertices.length], polygon1: this, polygon2: undefined});
+			// this.edges.push({v1: vertices[vx_i], v2: vertices[(vx_i + 1) % vertices.length], polygon1: this, polygon2: undefined});
 		}
         
         this.center = {x: 0, y: 0}
