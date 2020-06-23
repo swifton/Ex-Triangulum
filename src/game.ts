@@ -170,43 +170,6 @@ function render() {
         */
     }
 	
-    main_context.fillStyle = "magenta";
-	// Drawing polygons
-	for (let polygon_i = 0; polygon_i < polygons_to_cut.length; polygon_i += 1) {
-		let polygon = polygons_to_cut[polygon_i];
-        
-		main_context.beginPath();
-        
-		// Move to the last vertex of the polygon
-		let last_vx = polygon.vertices[polygon.vertices.length - 1];
-		let last_vx_canvas = world_to_canvas(last_vx);
-		main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
-        
-		// Looping over vertices, drawing the edge to each vertex.
-		for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
-			let vx_c = world_to_canvas(polygon.vertices[vx_i]);
-			main_context.lineTo(vx_c.x, vx_c.y);
-		}
-        
-		main_context.fill();
-		main_context.stroke();
-        
-        /*
-// Visualizing and labeling the center of the polygon.
-        main_context.fillStyle = "orange";
-        // main_context.beginPath();
-        let canv_v = world_to_canvas(polygon.center);
-        main_context.font = '10px serif';
-        main_context.fillText(polygon_i.toString(), canv_v.x, canv_v.y);
-        // main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
-        // main_context.fill();
-        main_context.fillStyle = "green";
-        */
-        
-        /*
-        */
-    }
-	
 	// Preparing the canvas for drawing open edges
 	main_context.strokeStyle = "red";
     
@@ -681,7 +644,7 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
 }
 
 function same_vertex(vertex_1: Vector, vertex_2: Vector): boolean {
-    let threshold = 0.1;
+    let threshold = 0.01;
     if (manhattan(vertex_1, vertex_2) < threshold) return true;
     return false;
 }
@@ -692,7 +655,7 @@ function manhattan(pt1: Vector, pt2: Vector): number {
 }
 
 function same_edge(edge_1: Edge, edge_2: Edge): boolean {
-    let threshold = 0.1;
+    let threshold = 0.01;
     
     if (manhattan(edge_1.v1, edge_2.v1) < threshold && manhattan(edge_1.v2, edge_2.v2) < threshold) return true;
     if (manhattan(edge_1.v1, edge_2.v2) < threshold && manhattan(edge_1.v2, edge_2.v1) < threshold) return true;
@@ -763,11 +726,33 @@ function point_is_on_line(vertex1: Vector, vertex2: Vector, point: Vector): bool
     return Math.abs(determinant) < 0.01;
 }
 
-let polygons_to_cut:Polygon[] = [];
+// Finds the intersection of two segments. Assumes that they intersect. Run a check before calling this function.
+function segment_intersection(v1: Vector, v2: Vector, v3: Vector, v4: Vector): Vector {
+    let threshold = 0.01;
+    // Making a system of linear equations for alpha and beta -- parameters that parameterize the lines.
+    let w1 = sum(v3, mul(v4, -1));
+    let w2 = sum(v2, mul(v1, -1));
+    let w3 = sum(v2, mul(v4, -1));
+    
+    let determinant = w1.x * w2.y - w1.y * w2.x;
+    // Degenerate cases -- parallel segments and segments on the same line.
+    if (Math.abs(determinant) < threshold) return {x: undefined, y: undefined};
+    
+    // Solving the system of linear equations.
+    let alpha = (1/determinant) * (w2.y * w3.x - w2.x * w3.y);
+    let beta = (1/determinant) * (-w1.y * w3.x + w1.x * w3.y);
+    
+    // The intersection has to be inside both segments.
+    if (alpha > 1 - threshold || alpha < threshold) return {x: undefined, y: undefined};
+    if (beta > 1 - threshold || beta < threshold) return {x: undefined, y: undefined};
+    
+    let new_vertex = sum(mul(v3, alpha), mul(v4, 1 - alpha));
+    return new_vertex;
+}
+
 function cut_polygons(): void {
     // The vertex to cut the edge at, the edge index in the 'edges' array, the distance to v1.
     let to_cut: [Vector, number, number][] = [];
-    let threshold = 0.1;
     
     let v1 = hovered_vertex;
     let v2 = selected_vertex;
@@ -775,59 +760,51 @@ function cut_polygons(): void {
     
     for (var polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
         let polygon = polygons[polygon_i];
-        // Detecting whether we need to cut the polygon.
         
-        // Does the polygon have vertices on both sides of the line? 
-        let side1_present = false;
-        let side2_present = false;
+        // Detecting whether we need to cut the polygon. And if we do, where to cut it.
+        // The number is the index of the vertex where the polygon starts or ends.
+        // The vector is an additonal vertex to add, if there is any (i.e. the line crosses an edge, and not a vertex).
+        let starts: [number, Vector][] = [];
+        let ends: [number, Vector][] = [];
         
         for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
-            let vx = polygon.vertices[vx_i];
-            if (point_is_on_inner_side(v1, v2, vx) && !point_is_on_line(v1, v2, vx)) {
-                side1_present = true;
-                if (side2_present) break;
-            }
-            if (!point_is_on_inner_side(v1, v2, vx) && !point_is_on_line(v1, v2, vx)) {
-                side2_present = true;
-                if (side1_present) break;
+            let vx2_i = (vx_i + 1) % polygon.vertices.length;
+            let vx1 = polygon.vertices[vx_i];
+            let vx2 = polygon.vertices[vx2_i];
+            let vx3 = polygon.vertices[(vx_i + 2) % polygon.vertices.length];
+            
+            if (point_is_on_line(v1, v2, vx2) && segments_intersect(v1, v2, vx1, vx3)) {
+                // The line enters or exits the polygon through a vertex.
+                if (!point_is_on_line(v1, v2, vx1)) ends.push([vx2_i, undefined]);
+                if (!point_is_on_line(v1, v2, vx3)) starts.push([vx2_i, undefined]);
+            } else {
+                // The line enters or exits the polygon through an edge.
+                if (!point_is_on_line(v1, v2, vx1)) {
+                    if (segments_intersect(v1, v2, vx1, vx2)) {
+                        let intersection = segment_intersection(v1, v2, vx1, vx2);
+                        starts.push([vx2_i, intersection]);
+                        ends.push([vx_i, intersection]);
+                    }
+                }
             }
         }
         
-        if (!side1_present || !side2_present) continue;
+        console.log("Starts, ends:");
+        console.log(starts);
+        console.log(ends);
         
-        polygons_to_cut.push(polygon);
-        /*
-        if (polygons[polygon_i] == polygon_to_cut) {
-            polygons.splice(polygon_i, 1);
-            break;
+        if (starts.length == 0) continue;
+        if (starts.length != ends.length) {
+            console.log("ERROR: Different start and end lengths, " + starts.length.toString() + ", " + ends.length.toString());
+            return;
         }
-        */
+        
+        let polygon1_vxs: Vector[] = [];
+        let polygon2_vxs: Vector[] = [];
+        
+        polygons.splice(polygon_i, 1);
+        polygon_i -= 1;
     }
-    
-    // Detecting which edges intersect with the line given by selected vertices.
-    for (let edge_i = 0; edge_i < edges.length; edge_i += 1) {
-        // Looking for the intersection.
-        let edge = edges[edge_i];
-        // Making a system of linear equations for alpha and beta -- parameters that parameterize the lines.
-        let w2 = sum(edge.v2, mul(edge.v1, -1));
-        let w3 = sum(edge.v2, mul(v2, -1));
-        
-        let determinant = w1.x * w2.y - w1.y * w2.x;
-        // Degenerate cases -- parallel segments and segments on the same line.
-        if (Math.abs(determinant) < threshold) continue;
-        
-        // Solving the system of linear equations.
-        let alpha = (1/determinant) * (w2.y * w3.x - w2.x * w3.y);
-        let beta = (1/determinant) * (-w1.y * w3.x + w1.x * w3.y);
-        
-        // The intersection has to be inside both segments.
-        if (alpha > 1 - threshold || alpha < threshold) continue;
-        if (beta > 1 - threshold || beta < threshold) continue;
-        
-        let new_vertex = sum(mul(v1, alpha), mul(v2, 1 - alpha));
-        to_cut.push([new_vertex, edge_i, euclid(new_vertex, v1)]);
-    }
-    
 }
 
 function mouse_up(x: number, y: number): void {
