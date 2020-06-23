@@ -506,6 +506,7 @@ function polygons_intersect(p1: Polygon, p2: Polygon): boolean {
 */
 
 function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
+    let threshold = 0.01;
     let starting_v1: Vector;
     let starting_v2: Vector;
     
@@ -530,6 +531,13 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
     let polygon_vertices = [];
     let target_edge: Edge = {v1: starting_v2, v2: starting_v1, polygon1: undefined, polygon2: undefined};
     let first_template_edge: Edge = {v1: p_template.vertices[0], v2: p_template.vertices[1], polygon1: undefined, polygon2: undefined};
+    
+    
+    if (Math.abs(euclid(first_template_edge.v1, first_template_edge.v2) - euclid(target_edge.v1, target_edge.v2)) > threshold) {
+        console.log("ERROR: Can't glue together edges of different lengths.");
+        return false;
+    }
+    
     let transformation = find_transformation(first_template_edge, target_edge);
     
     for (let vertex_i = 0; vertex_i < p_template.vertices.length; vertex_i += 1) {
@@ -809,6 +817,7 @@ function cut_polygons(): void {
             if (end[1] != undefined) c_polygon_vxs.push(end[1]);
             if (start[1] != undefined) c_polygon_vxs.push(start[1]);
             
+            // Adding the vertices.
             for (let vx_i = start[0]; vx_i != end[0]; vx_i = (vx_i + 1) % polygon.vertices.length) {
                 c_polygon_vxs.push(polygon.vertices[vx_i]);
             }
