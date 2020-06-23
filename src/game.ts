@@ -509,23 +509,14 @@ function transform(point: Vector, transformation: Transformation): Vector {
     return {x: x_new, y: y_new};
 }
 
-/*
-function polygons_intersect(p1: Polygon, p2: Polygon): boolean {
-    for (let v1_i = 0; v1_i < p1.length; v1_i += 1) {
-        for (let v2_i = 0; v2_i < p1.length; v2_i += 1) {
-            let v1 = p1.vertices[v1_i];
-            let v2 = p1.vertices[(v1_i + 1) & p1.vertices.length];
-            let v3 = p2.vertices[v2_i];
-            let v4 = p2.vertices[(v2_i + 1) & p2.vertices.length];
-            if (segments_intersect(v1, v2, v3, v4)) return false;
-        }
+// Tries to construct a polygon from a given template on the given edge, returns whether it was successful.
+// starting_vx_i is the first vertex of the edge that needs to be matched.
+function create_candidate_polygon(edge: Edge, p_template: Polygon_Template, starting_vx_i: number): boolean {
+    if (starting_vx_i < 0 || starting_vx_i >= p_template.vertices.length) {
+        console.log("ERROR: Invalid starting vertex index.");
+        return false;
     }
     
-    return false;
-}
-*/
-
-function create_candidate_polygon(edge: Edge, p_template: Polygon_Template): boolean {
     let threshold = 0.01;
     let starting_v1: Vector;
     let starting_v2: Vector;
@@ -549,8 +540,7 @@ function create_candidate_polygon(edge: Edge, p_template: Polygon_Template): boo
     
     let polygon_vertices = [];
     let target_edge: Edge = {v1: starting_v2, v2: starting_v1, polygon1: undefined, polygon2: undefined};
-    let first_template_edge: Edge = {v1: p_template.vertices[0], v2: p_template.vertices[1], polygon1: undefined, polygon2: undefined};
-    
+    let first_template_edge: Edge = {v1: p_template.vertices[starting_vx_i], v2: p_template.vertices[(starting_vx_i + 1) % p_template.vertices.length], polygon1: undefined, polygon2: undefined};
     
     if (Math.abs(euclid(first_template_edge.v1, first_template_edge.v2) - euclid(target_edge.v1, target_edge.v2)) > threshold) {
         console.log("ERROR: Can't glue together edges of different lengths.");
@@ -672,7 +662,7 @@ function create_candidate_polygon(edge: Edge, p_template: Polygon_Template): boo
 }
 
 function add_polygon(edge: Edge, p_template: Polygon_Template) {
-    if (create_candidate_polygon(edge, p_template)) {
+    if (create_candidate_polygon(edge, p_template, 0)) {
         polygons.push(candidate_polygon);
         candidate_polygon = undefined;
     }
@@ -786,9 +776,6 @@ function segment_intersection(v1: Vector, v2: Vector, v3: Vector, v4: Vector): V
 }
 
 function cut_polygons(): void {
-    // The vertex to cut the edge at, the edge index in the 'edges' array, the distance to v1.
-    let to_cut: [Vector, number, number][] = [];
-    
     let v1 = hovered_vertex;
     let v2 = selected_vertex;
     let w1 = sum(v1, mul(v2, -1));
@@ -989,7 +976,7 @@ function mouse_move(x: number, y: number): void {
         
         if (closest_edge == undefined || !same_edge(new_edge, closest_edge) || candidate_polygon == undefined) {
             closest_edge = new_edge;
-            create_candidate_polygon(closest_edge, current_template);
+            create_candidate_polygon(closest_edge, current_template, 2);
         }
     }
     
