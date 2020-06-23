@@ -951,19 +951,22 @@ function mouse_move(x: number, y: number): void {
         // Find the closest edge to the cursor, so that we can add a polygon to it.
         hovered_polygon = undefined;
         let min_dist = Number.MAX_VALUE;
+        let new_edge = undefined;
         for (var polygon of polygons) {
             for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
                 let dist = euclid(mouse_world_coord, polygon.vertices[vx_i]) + euclid(mouse_world_coord, polygon.vertices[(vx_i + 1) % polygon.vertices.length]);
                 if (min_dist > dist) {
                     min_dist = dist;
-                    closest_edge = {v1: polygon.vertices[vx_i], v2: polygon.vertices[(vx_i + 1) % polygon.vertices.length], polygon1: polygon, polygon2: undefined};
+                    new_edge = {v1: polygon.vertices[vx_i], v2: polygon.vertices[(vx_i + 1) % polygon.vertices.length], polygon1: polygon, polygon2: undefined};
                 }
                 // TODO: Check that there is only one polygon that has this edge.
             }
         }
         
-        create_candidate_polygon(closest_edge, current_template);
-        console.log(candidate_polygon);
+        if (closest_edge == undefined || !same_edge(new_edge, closest_edge)) {
+            closest_edge = new_edge;
+            create_candidate_polygon(closest_edge, current_template);
+        }
     }
     
     if (!found_hovered_vertex) hovered_vertex = undefined;
