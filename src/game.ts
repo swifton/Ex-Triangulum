@@ -114,6 +114,7 @@ let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: 
 let test_transform_edge_1: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1: undefined, polygon2:undefined};
 let test_transform_edge_2: Edge = {v1: {x: 4, y: 3}, v2: {x: 2, y: 4}, polygon1: undefined, polygon2:undefined};
 
+let candidate_polygon: Polygon = undefined;
 
 function step() {
 	resize_canvas();
@@ -415,9 +416,7 @@ function world_to_canvas(world_point: Vector): Vector {
 function create_foam() {
     let first_polygon = new Polygon([{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 1, y: 0}]);
     polygons = [first_polygon];
-    console.log("1");
     add_polygon(first_edge, triangle_template);
-    console.log("2");
     
     open_edges = [];
     let edge_i;
@@ -436,7 +435,7 @@ function create_foam() {
         // last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
         let edge: Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length], polygon1: polygons[polygon_i], polygon2: undefined};
         //add_polygon(open_edges[edge_i], templates[random_integer(0, templates.length)]);
-        // add_polygon(edge, templates[random_integer(0, templates.length)]);
+        add_polygon(edge, templates[random_integer(0, templates.length)]);
     }
     
     let transformation = find_transformation(test_transform_edge_1, test_transform_edge_2);
@@ -505,11 +504,10 @@ function polygons_intersect(p1: Polygon, p2: Polygon): boolean {
 }
 */
 
-function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
+function create_candidate_polygon(edge: Edge, p_template: Polygon_Template): boolean {
     let threshold = 0.01;
     let starting_v1: Vector;
     let starting_v2: Vector;
-    
     
     if (edge.polygon2 == undefined) {
         starting_v1 = edge.v1;
@@ -646,9 +644,17 @@ function add_polygon(edge: Edge, p_template: Polygon_Template): boolean {
     }
     */
     
-    polygons.push(new_polygon);
+    //polygons.push(new_polygon);
+    candidate_polygon = new_polygon;
     console.log("Success!");
     return true;
+}
+
+function add_polygon(edge: Edge, p_template: Polygon_Template) {
+    if (create_candidate_polygon(edge, p_template)) {
+        polygons.push(candidate_polygon);
+        candidate_polygon = undefined;
+    }
 }
 
 function same_vertex(vertex_1: Vector, vertex_2: Vector): boolean {
@@ -851,8 +857,12 @@ function mouse_up(x: number, y: number): void {
             }
         } else {
             if (closest_edge != undefined) {
-                let result = add_polygon(closest_edge, current_template);
-                if (result) closest_edge = undefined;
+                if (candidate_polygon != undefined) {
+                    polygons.push(candidate_polygon);
+                    candidate_polygon = undefined;
+                }
+                // let result = add_polygon(closest_edge, current_template);
+                // if (result) closest_edge = undefined;
             }
             
             if (hovered_polygon != undefined) {
@@ -920,6 +930,7 @@ function mouse_move(x: number, y: number): void {
     
     let found: boolean = false;
     for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+        // Hovering next to a vertex?
         for (var vertex of polygons[polygon_i].vertices) {
             if (euclid(vertex, mouse_world_coord) < 10 / unit_pix) {
                 hovered_vertex = vertex;
@@ -927,7 +938,7 @@ function mouse_move(x: number, y: number): void {
             }
         }
         
-        
+        // Hovering above a polygon?
         if (point_inside_polygon(mouse_world_coord, polygons[polygon_i])) {
             hovered_polygon = polygons[polygon_i];
             closest_edge = undefined;
@@ -937,6 +948,7 @@ function mouse_move(x: number, y: number): void {
     }
     
     if (!found) {
+        // Find the closest edge to the cursor, so that we can add a polygon to it.
         hovered_polygon = undefined;
         let min_dist = Number.MAX_VALUE;
         for (var polygon of polygons) {
@@ -946,8 +958,12 @@ function mouse_move(x: number, y: number): void {
                     min_dist = dist;
                     closest_edge = {v1: polygon.vertices[vx_i], v2: polygon.vertices[(vx_i + 1) % polygon.vertices.length], polygon1: polygon, polygon2: undefined};
                 }
+                // TODO: Check that there is only one polygon that has this edge.
             }
         }
+        
+        create_candidate_polygon(closest_edge, current_template);
+        console.log(candidate_polygon);
     }
     
     if (!found_hovered_vertex) hovered_vertex = undefined;
@@ -964,5 +980,5 @@ function mouse_scroll(direction: number): void {
 }
 
 let first_edge: Edge = {v1: {x: 0, y: 0}, v2: {x: 1, y: 0}, polygon1: undefined, polygon2: undefined};
-create_foam();
-// add_polygon(first_edge, triangle_template);
+//create_foam();
+add_polygon(first_edge, square_template);
