@@ -8,7 +8,9 @@ function do_key_down(e: KeyboardEvent) {
     let i = e.keyCode;
     //console.log(i);
     
-    if (i == 32 && typeof space_down != "undefined") space_down();
+    if (i == 32) space_down();
+    if (i == 81) q_down();
+    if (i == 69) e_down();
     
     /*
         if (i == 37 && typeof left_key_down != "undefined") left_key_down();
@@ -21,8 +23,6 @@ function do_key_down(e: KeyboardEvent) {
         if (i == 65 && typeof a_down != "undefined") a_down();
         if (i == 83 && typeof s_down != "undefined") s_down();
         if (i == 68 && typeof d_down != "undefined") d_down();
-        if (i == 81 && typeof q_down != "undefined") q_down();
-        if (i == 69 && typeof e_down != "undefined") e_down();
         if (i == 70 && typeof f_down != "undefined") f_down();
         if (i == 71 && typeof g_down != "undefined") g_down();
         if (i == 82 && typeof r_down != "undefined") r_down();

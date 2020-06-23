@@ -986,6 +986,31 @@ function mouse_move(x: number, y: number): void {
     if (!found_hovered_vertex) hovered_vertex = undefined;
 }
 
+// Rotating the polygon clockwise
+function e_down() {
+    // If the candidate polygon is defined, then there is candidate_edge_i that works. 
+    // Therefore, there will be no infiinte loop. Worst case: it makes a full circle, 
+    // comes back to the current value and terminates.
+    if (candidate_polygon == undefined) return;
+    
+    while (true) {
+        candidate_edge_i += 1;
+        if (candidate_edge_i == current_template.vertices.length) candidate_edge_i = 0;
+        if (create_candidate_polygon(closest_edge, current_template, candidate_edge_i)) break;
+    }
+}
+
+// Rotating the polygon counter-clockwise
+function q_down() {
+    if (candidate_polygon == undefined) return;
+    
+    while (true) {
+        candidate_edge_i -= 1;
+        if (candidate_edge_i == -1) candidate_edge_i = current_template.vertices.length - 1;
+        if (create_candidate_polygon(closest_edge, current_template, candidate_edge_i)) break;
+    }
+}
+
 function space_down(): void {
     if (hovered_polygon != undefined) {
         current_template = {vertices: hovered_polygon.vertices};
