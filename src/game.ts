@@ -115,6 +115,7 @@ let test_transform_edge_1: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}, polygon1:
 let test_transform_edge_2: Edge = {v1: {x: 4, y: 3}, v2: {x: 2, y: 4}, polygon1: undefined, polygon2:undefined};
 
 let candidate_polygon: Polygon = undefined;
+let candidate_edge_i: number = undefined;
 
 function step() {
 	resize_canvas();
@@ -976,7 +977,9 @@ function mouse_move(x: number, y: number): void {
         
         if (closest_edge == undefined || !same_edge(new_edge, closest_edge) || candidate_polygon == undefined) {
             closest_edge = new_edge;
-            create_candidate_polygon(closest_edge, current_template, 2);
+            for (candidate_edge_i = 0; candidate_edge_i < current_template.vertices.length; candidate_edge_i += 1) {
+                if (create_candidate_polygon(closest_edge, current_template, candidate_edge_i)) break;
+            }
         }
     }
     
