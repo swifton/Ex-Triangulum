@@ -971,11 +971,12 @@ function mouse_move(x: number, y: number): void {
                     min_dist = dist;
                     new_edge = {v1: polygon.vertices[vx_i], v2: polygon.vertices[(vx_i + 1) % polygon.vertices.length], polygon1: polygon, polygon2: undefined};
                 }
-                // TODO: Check that there is only one polygon that has this edge.
+                // TODO: Check that the cursor projects onto the edge.
             }
         }
         
         if (closest_edge == undefined || !same_edge(new_edge, closest_edge) || candidate_polygon == undefined) {
+            candidate_polygon = undefined;
             closest_edge = new_edge;
             for (candidate_edge_i = 0; candidate_edge_i < current_template.vertices.length; candidate_edge_i += 1) {
                 if (create_candidate_polygon(closest_edge, current_template, candidate_edge_i)) break;
