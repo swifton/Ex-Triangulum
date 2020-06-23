@@ -758,6 +758,9 @@ function cut_polygons(): void {
     let v2 = selected_vertex;
     let w1 = sum(v1, mul(v2, -1));
     
+    // Array of polygons that we will add.
+    let polygons_vxs: Vector[][] = [];
+    
     for (var polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
         let polygon = polygons[polygon_i];
         
@@ -789,22 +792,36 @@ function cut_polygons(): void {
             }
         }
         
-        console.log("Starts, ends:");
-        console.log(starts);
-        console.log(ends);
-        
         if (starts.length == 0) continue;
         if (starts.length != ends.length) {
             console.log("ERROR: Different start and end lengths, " + starts.length.toString() + ", " + ends.length.toString());
             return;
         }
         
-        let polygon1_vxs: Vector[] = [];
-        let polygon2_vxs: Vector[] = [];
+        // Constructing polygons according to the start/end markup we made.
+        for (let loop_i = 0; loop_i < starts.length; loop_i  += 1) {
+            let start = starts[loop_i];
+            let end = ends[(loop_i + 1) % ends.length];
+            
+            let c_polygon_vxs: Vector[] = [];
+            
+            // In case if the line enters or exits through an edge.
+            if (end[1] != undefined) c_polygon_vxs.push(end[1]);
+            if (start[1] != undefined) c_polygon_vxs.push(start[1]);
+            
+            for (let vx_i = start[0]; vx_i != end[0]; vx_i = (vx_i + 1) % polygon.vertices.length) {
+                c_polygon_vxs.push(polygon.vertices[vx_i]);
+            }
+            c_polygon_vxs.push(polygon.vertices[end[0]]);
+            
+            polygons_vxs.push(c_polygon_vxs);
+        }
         
         polygons.splice(polygon_i, 1);
         polygon_i -= 1;
     }
+    
+    for (var vx_set of polygons_vxs) polygons.push(new Polygon(vx_set));
 }
 
 function mouse_up(x: number, y: number): void {
