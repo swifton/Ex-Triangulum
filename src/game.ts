@@ -171,6 +171,27 @@ function render() {
         */
     }
 	
+	// Drawing the candidate polygon
+    if (candidate_polygon != undefined) {
+        main_context.globalAlpha = 0.5;
+        main_context.beginPath();
+        
+        // Move to the last vertex of the polygon
+        let last_vx = candidate_polygon.vertices[candidate_polygon.vertices.length - 1];
+        let last_vx_canvas = world_to_canvas(last_vx);
+        main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
+        
+        // Looping over vertices, drawing the edge to each vertex.
+        for (let vx_i = 0; vx_i < candidate_polygon.vertices.length; vx_i += 1) {
+            let vx_c = world_to_canvas(candidate_polygon.vertices[vx_i]);
+            main_context.lineTo(vx_c.x, vx_c.y);
+        }
+        
+        main_context.fill();
+        main_context.stroke();
+        main_context.globalAlpha = 1;
+    }
+    
 	// Preparing the canvas for drawing open edges
 	main_context.strokeStyle = "red";
     
@@ -935,6 +956,8 @@ function mouse_move(x: number, y: number): void {
             if (euclid(vertex, mouse_world_coord) < 10 / unit_pix) {
                 hovered_vertex = vertex;
                 found_hovered_vertex = true;
+                candidate_polygon = undefined;
+                found = true;
             }
         }
         
@@ -943,6 +966,7 @@ function mouse_move(x: number, y: number): void {
             hovered_polygon = polygons[polygon_i];
             closest_edge = undefined;
             found = true;
+            candidate_polygon = undefined;
             break;
         }
     }
@@ -963,7 +987,7 @@ function mouse_move(x: number, y: number): void {
             }
         }
         
-        if (closest_edge == undefined || !same_edge(new_edge, closest_edge)) {
+        if (closest_edge == undefined || !same_edge(new_edge, closest_edge) || candidate_polygon == undefined) {
             closest_edge = new_edge;
             create_candidate_polygon(closest_edge, current_template);
         }
