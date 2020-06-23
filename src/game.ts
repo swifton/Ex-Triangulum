@@ -15,6 +15,10 @@ function sum(vec_1: Vector, vec_2: Vector): Vector {
 	return {x: vec_1.x + vec_2.x, y: vec_1.y + vec_2.y};
 }
 
+function dot(vec_1: Vector, vec_2: Vector): number {
+    return vec_1.x * vec_2.x + vec_1.y * vec_2.y;
+}
+
 interface Edge {
 	v1: Vector;
 	v2: Vector;
@@ -77,6 +81,7 @@ let last_edge: Edge;
 let mouse_world_coord: Vector = {x: 0, y: 0};
 let hovered_polygon: Polygon = undefined;
 let hovered_vertex: Vector = undefined;
+let hovered_edge: Edge = undefined;
 let selected_vertex: Vector = undefined;
 let closest_edge: Edge = undefined;
 let to_add_type = 3;
@@ -324,6 +329,18 @@ function render() {
         main_context.beginPath();
         let vx_1c = world_to_canvas(closest_edge.v1);
         let vx_2c = world_to_canvas(closest_edge.v2);
+        
+        main_context.moveTo(vx_1c.x, vx_1c.y);
+        main_context.lineTo(vx_2c.x, vx_2c.y);
+        main_context.stroke();
+    }
+    
+	if (hovered_edge != undefined) {
+        main_context.strokeStyle = "yellow";
+        
+        main_context.beginPath();
+        let vx_1c = world_to_canvas(hovered_edge.v1);
+        let vx_2c = world_to_canvas(hovered_edge.v2);
         
         main_context.moveTo(vx_1c.x, vx_1c.y);
         main_context.lineTo(vx_2c.x, vx_2c.y);
@@ -921,9 +938,25 @@ function point_inside_polygon(point: Vector, polygon: Polygon): boolean {
     return true;
 }
 
+// Takes indices of two polygons in the polygons array, gets rid of both, pushes their union.
+function unite_polygons(polygon1_i: number, polygon2_i: number): void {
+    
+}
+
 // The Euclid distance between two points.
 function euclid(p1: Vector, p2: Vector):number {
     return Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+}
+
+// Assumes that v1 and v2 are different.
+function distance_to_segment(v1: Vector, v2: Vector, p: Vector): number {
+    let dir = sum(v2, mul(v1, -1));
+    dir = mul(dir, 1/euclid(v1, v2));
+    let to_project = sum(p, mul(v1, -1));
+    
+    let parallel = mul(dir, dot(dir, to_project));
+    let perp = sum(to_project, mul(parallel, -1));
+    return Math.sqrt(Math.pow(perp.x, 2) + Math.pow(perp.y, 2));
 }
 
 function mouse_move(x: number, y: number): void {
@@ -943,14 +976,33 @@ function mouse_move(x: number, y: number): void {
         for (var vertex of polygons[polygon_i].vertices) {
             if (euclid(vertex, mouse_world_coord) < 10 / unit_pix) {
                 hovered_vertex = vertex;
+                hovered_edge = undefined;
+                hovered_polygon = undefined;
                 found_hovered_vertex = true;
                 candidate_polygon = undefined;
                 found = true;
+                break;
+            }
+        }
+        
+        if (!found) {
+            // Hovering next to an edge? 
+            for (let vx_i = 0; vx_i < polygons[polygon_i].vertices.length; vx_i += 1) {
+                let vertex = polygons[polygon_i].vertices[vx_i];
+                let vertex2 = polygons[polygon_i].vertices[(vx_i + 1) % polygons[polygon_i].vertices.length];
+                if (distance_to_segment(vertex, vertex2, mouse_world_coord) < 10 / unit_pix) {
+                    hovered_polygon = undefined;
+                    hovered_edge = {v1: vertex, v2: vertex2, polygon1: undefined, polygon2: undefined};
+                    found = true;
+                    break;
+                }
             }
         }
         
         // Hovering above a polygon?
-        if (point_inside_polygon(mouse_world_coord, polygons[polygon_i])) {
+        if (!found && point_inside_polygon(mouse_world_coord, polygons[polygon_i])) {
+            hovered_vertex = undefined;
+            hovered_edge = undefined;
             hovered_polygon = polygons[polygon_i];
             closest_edge = undefined;
             found = true;
@@ -962,6 +1014,8 @@ function mouse_move(x: number, y: number): void {
     if (!found) {
         // Find the closest edge to the cursor, so that we can add a polygon to it.
         hovered_polygon = undefined;
+        hovered_vertex = undefined;
+        hovered_edge = undefined;
         let min_dist = Number.MAX_VALUE;
         let new_edge = undefined;
         for (var polygon of polygons) {
