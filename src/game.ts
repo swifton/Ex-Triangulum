@@ -881,6 +881,33 @@ function mouse_up(x: number, y: number): void {
                 selected_vertex = undefined;
                 hovered_vertex = undefined;
             }
+        } else if (hovered_edge != undefined) {
+            let polygon1_i: number = undefined;
+            let polygon2_i: number = undefined;
+            let v1i: number = undefined;
+            let v2i: number = undefined;
+            
+            for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
+                let vxs = polygons[polygon_i].vertices;
+                for (let vertex_i = 0; vertex_i < vxs.length; vertex_i += 1) {
+                    let vx1 = vxs[vertex_i];
+                    let vx2 = vxs[(vertex_i + 1) % vxs.length];
+                    
+                    if (same_edge(hovered_edge, {v1: vx1, v2: vx2, polygon1: undefined, polygon2: undefined})) {
+                        if (polygon1_i == undefined) {
+                            polygon1_i = polygon_i;
+                            v1i = vertex_i;
+                        } else {
+                            polygon2_i = polygon_i;
+                            v2i = vertex_i;
+                            break;
+                        }
+                    }
+                }
+                if (polygon2_i != undefined) break;
+            }
+            
+            if (polygon2_i != undefined) unite_polygons(polygon1_i, polygon2_i, v1i, v2i);
         } else {
             if (closest_edge != undefined) {
                 if (candidate_polygon != undefined) {
@@ -938,9 +965,33 @@ function point_inside_polygon(point: Vector, polygon: Polygon): boolean {
     return true;
 }
 
-// Takes indices of two polygons in the polygons array, gets rid of both, pushes their union.
-function unite_polygons(polygon1_i: number, polygon2_i: number): void {
+// Takes indices of two polygons in the polygons array, gets rid of both, pushes their union. 
+// Assumes that polygon1_i < polygon2_i.
+function unite_polygons(polygon1_i: number, polygon2_i: number, v1i: number, v2i: number): void {
+    let p1 = polygons[polygon1_i];
+    let p2 = polygons[polygon2_i];
+    polygons.splice(polygon2_i, 1);
+    polygons.splice(polygon1_i, 1);
     
+    let new_polygon_vxs = [];
+    
+    for (let v_i = (v1i + 1) % p1.vertices.length; v_i != v1i; v_i = (v_i + 1) % p1.vertices.length) {
+        new_polygon_vxs.push(p1.vertices[v_i]);
+    }
+    
+    for (let v_i = (v2i + 1) % p2.vertices.length; v_i != v2i; v_i = (v_i + 1) % p2.vertices.length) {
+        new_polygon_vxs.push(p2.vertices[v_i]);
+    }
+    
+    if (point_is_on_line(new_polygon_vxs[p1.vertices.length], new_polygon_vxs[p1.vertices.length - 2], new_polygon_vxs[p1.vertices.length - 1])) {
+        new_polygon_vxs.splice(p1.vertices.length - 1, 1);
+    }
+    
+    if (point_is_on_line(new_polygon_vxs[new_polygon_vxs.length - 1], new_polygon_vxs[1], new_polygon_vxs[0])) {
+        new_polygon_vxs.splice(0, 1);
+    }
+    
+    polygons.push(new Polygon(new_polygon_vxs));
 }
 
 // The Euclid distance between two points.
