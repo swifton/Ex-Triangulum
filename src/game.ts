@@ -954,7 +954,9 @@ function distance_to_segment(v1: Vector, v2: Vector, p: Vector): number {
     dir = mul(dir, 1/euclid(v1, v2));
     let to_project = sum(p, mul(v1, -1));
     
-    let parallel = mul(dir, dot(dir, to_project));
+    // Make sure we don't go outside of the segment.
+    let alpha = Math.max(0, Math.min(1, dot(dir, to_project)));
+    let parallel = mul(dir, alpha);
     let perp = sum(to_project, mul(parallel, -1));
     return Math.sqrt(Math.pow(perp.x, 2) + Math.pow(perp.y, 2));
 }
@@ -970,7 +972,11 @@ function mouse_move(x: number, y: number): void {
     
     let found_hovered_vertex = false;
     
+    // This variable lets us keep the priorities: if we hover next to a vertex, we don't care about anything else.
+    // If we hover next to an edge, we don't care about polygons and free edges.
+    // If we hover over a polygon, we don't need to find a free edge to add a polygon to.
     let found: boolean = false;
+    
     for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
         // Hovering next to a vertex?
         for (var vertex of polygons[polygon_i].vertices) {
