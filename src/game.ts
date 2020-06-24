@@ -1,3 +1,11 @@
+// TODO: 
+// 1. Handle the multiedge union case.
+// 2. Replace edge matching with online check for collision detection
+// 3. Make sure you can't hover over two things at the same time.
+// 4. It looks like you can hover over an edge while being outside it on the line.
+// 5. Zoom to the cursor like google maps.
+
+
 function random_integer(min: number, max: number): number { // Including min, excluding max
 	return (min + Math.floor(Math.random() * (max - min)));
 }
@@ -1135,4 +1143,4 @@ function mouse_scroll(direction: number): void {
 
 let first_edge: Edge = {v1: {x: 0, y: 0}, v2: {x: 1, y: 0}, polygon1: undefined, polygon2: undefined};
 //create_foam();
-add_polygon(first_edge, square_template);
+add_polygon(first_edge, triangle_template);
