@@ -130,14 +130,6 @@ let antirhombus_template: Polygon_Template = {vertices: [{x: 0, y: 0},
 let templates = [triangle_template, hexagon_template, rhombus_template, prism_template, antirhombus_template];
 let current_template: Polygon_Template = triangle_template;
 
-let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}};
-let test_transform_edge_1: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}};
-let test_transform_edge_2: Edge = {v1: {x: 4, y: 3}, v2: {x: 2, y: 4}};
-
-let debug_edge_1: Vector[] = undefined;
-let debug_edge_2: Vector[] = undefined;
-let debug_edge_3: Vector[] = undefined;
-
 let candidate_polygon: Polygon = undefined;
 let candidate_edge_i: number = undefined;
 
@@ -166,17 +158,6 @@ function draw_polygon(polygon: Polygon, color: string, alpha: number): void {
     main_context.fill();
     main_context.stroke();
     
-    /*
-// Visualizing and labeling the center of the polygon.
-    main_context.fillStyle = "orange";
-    // main_context.beginPath();
-    let canv_v = world_to_canvas(polygon.center);
-    main_context.font = '10px serif';
-    main_context.fillText(polygon_i.toString(), canv_v.x, canv_v.y);
-    // main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
-    // main_context.fill();
-    main_context.fillStyle = "green";
-    */
     main_context.globalAlpha = 1;
 }
 
@@ -225,6 +206,18 @@ function render() {
 	for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
 		let polygon = polygons[polygon_i];
         draw_polygon(polygon, "green", 1);
+        
+        /*
+        // Visualizing and labeling the center of the polygon.
+        main_context.fillStyle = "orange";
+        main_context.beginPath();
+        let canv_v = world_to_canvas(polygon.center);
+        main_context.font = '10px serif';
+        main_context.fillText(polygon_i.toString(), canv_v.x, canv_v.y);
+        main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
+        main_context.fill();
+        main_context.fillStyle = "green";
+        */
     }
 	
     if (candidate_polygon != undefined) draw_polygon(candidate_polygon, "green", 0.5);
@@ -237,100 +230,10 @@ function render() {
     if (selected_vertex != undefined) draw_point(selected_vertex, "yellow");
     
 	// Visualizing the mouse position.
-    if (point_is_on_line(test_inner_side_edge.v1, test_inner_side_edge.v2, mouse_world_coord)) draw_point(mouse_world_coord, "red");
-    else draw_point(mouse_world_coord, "blue");
     //draw_point(mouse_world_coord, "red");
     
     // Visualizing the line by which the polygons will be cut.
     if (hovered_vertex != undefined && selected_vertex != undefined) draw_edge({v1: hovered_vertex, v2: selected_vertex}, "blue");
-    
-    /*
-// Vertex labels for debugging
-    main_context.fillStyle = "orange";
-    for (var vertex_i in vertices) {
-        let vertex = vertices[vertex_i];
-        main_context.beginPath();
-        let canv_v = world_to_canvas(vertex.v);
-        main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
-        main_context.fill();
-        
-        main_context.font = '10px serif';
-        main_context.fillText(vertex_i, canv_v.x, canv_v.y);
-    }
-    */
-    
-    /*
-// Edges for debugging polygon collisions
-    if (debug_edge_1 != undefined) {
-        main_context.strokeStyle = "cyan";
-        
-        main_context.beginPath();
-        let vx_1c = world_to_canvas(debug_edge_1[0]);
-        let vx_2c = world_to_canvas(debug_edge_1[1]);
-        
-        main_context.moveTo(vx_1c.x, vx_1c.y);
-        main_context.lineTo(vx_2c.x, vx_2c.y);
-        main_context.stroke();
-        
-        main_context.strokeStyle = "blue";
-        
-        main_context.beginPath();
-        vx_1c = world_to_canvas(debug_edge_2[0]);
-        vx_2c = world_to_canvas(debug_edge_2[1]);
-        
-        main_context.moveTo(vx_1c.x, vx_1c.y);
-        main_context.lineTo(vx_2c.x, vx_2c.y);
-        main_context.stroke();
-        
-        main_context.strokeStyle = "magenta";
-        
-        main_context.beginPath();
-        vx_1c = world_to_canvas(debug_edge_3[0]);
-        vx_2c = world_to_canvas(debug_edge_3[1]);
-        
-        main_context.moveTo(vx_1c.x, vx_1c.y);
-        main_context.lineTo(vx_2c.x, vx_2c.y);
-        main_context.stroke();
-        
-    }
-    */
-    
-    /*
-	// Drawing an edge for testing the inner side test
-	main_context.strokeStyle = "blue";
-    
-	main_context.beginPath();
-    let vx_1c = world_to_canvas(test_inner_side_edge.v1);
-    let vx_2c = world_to_canvas(test_inner_side_edge.v2);
-    
-	main_context.moveTo(vx_1c.x, vx_1c.y);
-	main_context.lineTo(vx_2c.x, vx_2c.y);
-	main_context.stroke();
-    */
-    
-    /*
-	// Drawing edges for testing linear transform
-	main_context.strokeStyle = "blue";
-    
-	main_context.beginPath();
-    vx_1c = world_to_canvas(test_transform_edge_1.v1);
-    vx_2c = world_to_canvas(test_transform_edge_1.v2);
-    
-	main_context.moveTo(vx_1c.x, vx_1c.y);
-	main_context.lineTo(vx_2c.x, vx_2c.y);
-	main_context.stroke();
-    
-	main_context.strokeStyle = "red";
-    
-	main_context.beginPath();
-    vx_1c = world_to_canvas(test_transform_edge_2.v1);
-    vx_2c = world_to_canvas(test_transform_edge_2.v2);
-    
-	main_context.moveTo(vx_1c.x, vx_1c.y);
-	main_context.lineTo(vx_2c.x, vx_2c.y);
-	main_context.stroke();
-    */
-    
 }
 
 function canvas_to_world(canvas_point: Vector): Vector {
@@ -356,18 +259,9 @@ function create_foam() {
         let edge: Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length]};
         add_polygon(edge, polygons[polygon_i], templates[random_integer(0, templates.length)]);
     }
-    
-    let transformation = find_transformation(test_transform_edge_1, test_transform_edge_2);
-    
-    test_transform_edge_1.v1 = transform(test_transform_edge_1.v1, transformation);
-    test_transform_edge_1.v2 = transform(test_transform_edge_1.v2, transformation);
-    
-    test_transform_edge_1.v1.x += 0.1;
-    test_transform_edge_1.v2.x += 0.1;
-    
 }
 
-// Finds a linear transformation that transforms edge_1 into edge_2
+// Find a linear transformation that transforms edge_1 into edge_2
 function find_transformation(edge_1: Edge, edge_2: Edge): Transformation {
     let xt1 = edge_1.v1.x;
     let yt1 = edge_1.v1.y;
@@ -399,7 +293,7 @@ function find_transformation(edge_1: Edge, edge_2: Edge): Transformation {
     return result;
 }
 
-// Applies a linear transformation to a point.
+// Apply a linear transformation to a point.
 function transform(point: Vector, transformation: Transformation): Vector {
     let x_new = transformation.scale * (point.x * transformation.cos - point.y * transformation.sin) + transformation.dx;
     let y_new = transformation.scale * (point.x * transformation.sin + point.y * transformation.cos) + transformation.dy;
@@ -468,27 +362,24 @@ function create_candidate_polygon(edge: Edge, base: Polygon, p_template: Polygon
                     // This code checks that the new polygon won't intersect with old polygons. This code is difficult to understand, 
                     // maintain and debug. It should be replaced with something else.
                     if (point_is_on_inner_side(this_prev, this_vx, that_prev) && point_is_on_inner_side(this_vx, this_next, that_prev)) {
-                        console.log("1Vertex collision"); 
-                        debug_edge_1 = [this_prev, this_vx];
-                        debug_edge_2 = [this_vx, this_next];
-                        debug_edge_3 = [that_vx, that_prev];
+                        console.log("Vertex collision 1"); 
                         
                         if (!same_vertex(this_prev, that_prev) && !same_vertex(this_next, that_prev)) return false;
                         console.log("Exit prevented."); 
                     }
                     if (point_is_on_inner_side(this_prev, this_vx, that_next) && point_is_on_inner_side(this_vx, this_next, that_next)) {
-                        console.log("Vertex collision");
+                        console.log("Vertex collision 2");
                         if (!same_vertex(this_prev, that_next) && !same_vertex(this_next, that_next)) return false;
                         console.log("Exit prevented."); 
                     }
                     
                     if (point_is_on_inner_side(that_prev, that_vx, this_prev) && point_is_on_inner_side(that_vx, that_next, this_prev)) {
-                        console.log("Vertex collision"); 
+                        console.log("Vertex collision 3"); 
                         if (!same_vertex(that_prev, this_prev) && !same_vertex(that_next, this_prev)) return false;
                         console.log("Exit prevented."); 
                     }
                     if (point_is_on_inner_side(that_prev, that_vx, this_next) && point_is_on_inner_side(that_vx, that_next, this_next)) {
-                        console.log("Vertex collision"); 
+                        console.log("Vertex collision 4"); 
                         if (!same_vertex(that_prev, this_next) && !same_vertex(that_next, this_next)) return false;
                         console.log("Exit prevented."); 
                     }
