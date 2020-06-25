@@ -67,8 +67,6 @@ let main_context = main_canvas.getContext('2d');
 let unit_pix: number = 200;
 let canvas_center = [0, 0];
 let polygons: Polygon[] = [];
-let open_edges: Edge[] = [];
-let edges: Edge[] = [];
 
 let mouse_down_pos: number[];
 let pan_offset_x: number = 0;
@@ -76,8 +74,6 @@ let pan_offset_y: number = 0;
 let old_pan_offset_x: number = 0;
 let old_pan_offset_y: number = 0;
 let panned = false;
-
-let last_edge: Edge;
 
 let mouse_world_coord: Vector = {x: 0, y: 0};
 let hovered_polygon: Polygon = undefined;
@@ -147,6 +143,10 @@ let candidate_polygon: Polygon = undefined;
 let candidate_edge_i: number = undefined;
 
 function step() {
+    render();
+}
+
+function render() {
     // Resizing the canvas to fit the whole window.
 	main_canvas.width = window.innerWidth;
     main_canvas.height = window.innerHeight;
@@ -158,10 +158,6 @@ function step() {
     main_context.closePath();
     main_context.fill();
     
-    render();
-}
-
-function render() {
 	// Hadndling canvas panning (operated by dragging the mouse).
 	canvas_center[0] = main_canvas.width / 2 + pan_offset_x + old_pan_offset_x;
 	canvas_center[1] = main_canvas.height / 2 + pan_offset_y + old_pan_offset_y;
@@ -205,9 +201,6 @@ function render() {
         // main_context.fill();
         main_context.fillStyle = "green";
         */
-        
-        /*
-        */
     }
 	
 	// Drawing the candidate polygon
@@ -231,35 +224,7 @@ function render() {
         main_context.globalAlpha = 1;
     }
     
-	// Preparing the canvas for drawing open edges
-	main_context.strokeStyle = "red";
-    
-	// Drawing open edges
-	main_context.beginPath();
-	for (let edge_i = 0; edge_i < open_edges.length; edge_i += 1) {
-		let edge = open_edges[edge_i];
-		let vx_1c = world_to_canvas(edge.v1);
-		let vx_2c = world_to_canvas(edge.v2);
-        
-		main_context.moveTo(vx_1c.x, vx_1c.y);
-		main_context.lineTo(vx_2c.x, vx_2c.y);
-	}
-	main_context.stroke();
-	
     /*
-	// Drawing the last edge for debugging purposes
-	main_context.strokeStyle = "blue";
-    
-	main_context.beginPath();
-	let vx_1c = world_to_canvas(last_edge.v1);
-	let vx_2c = world_to_canvas(last_edge.v2);
-    
-	main_context.moveTo(vx_1c.x, vx_1c.y);
-	main_context.lineTo(vx_2c.x, vx_2c.y);
-	main_context.stroke();
-    */
-    
-    
 	// Drawing an edge for testing the inner side test
 	main_context.strokeStyle = "blue";
     
@@ -270,7 +235,7 @@ function render() {
 	main_context.moveTo(vx_1c.x, vx_1c.y);
 	main_context.lineTo(vx_2c.x, vx_2c.y);
 	main_context.stroke();
-    
+    */
     
     /*
 	// Drawing edges for testing linear transform
@@ -364,18 +329,6 @@ function render() {
     }
     */
     
-    
-    // Edge labels for debugging.
-    main_context.fillStyle = "orange";
-    for (var edge_i = 0; edge_i < open_edges.length; edge_i += 1) {
-        let edge = open_edges[edge_i];
-        let label_world = mul(sum(edge.v1, edge.v2), 0.5);
-        let label_canv = world_to_canvas(label_world);
-        main_context.font = '10px serif';
-        main_context.fillText(edge_i.toString(), label_canv.x, label_canv.y);
-    }
-    
-    
     /*
 // Edges for debugging polygon collisions
     if (debug_edge_1 != undefined) {
@@ -458,17 +411,11 @@ function create_foam() {
     polygons = [];
     add_polygon(first_edge, undefined, triangle_template);
     
-    open_edges = [];
-    //last_edge = first_polygon.edges[0];
-    
     for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
         let polygon_i = random_integer(0, polygons.length);
         let polygon = polygons[polygon_i].vertices;
         let vx_i = random_integer(0, polygon.length);
-        // edge_i = random_integer(0, open_edges.length);
-        // last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
         let edge: Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length]};
-        //add_polygon(open_edges[edge_i], templates[random_integer(0, templates.length)]);
         add_polygon(edge, polygons[polygon_i], templates[random_integer(0, templates.length)]);
     }
     
@@ -639,31 +586,6 @@ function create_candidate_polygon(edge: Edge, base: Polygon, p_template: Polygon
         }
     }
     
-    /*
-    // If some of the edges coincide with existing edges, pick the existing edge instead
-    // of creating a new one. Make it unavailable for new polygons.
-    for (let edge_i = 0; edge_i < new_polygon.edges.length; edge_i += 1) {
-        let edge_to_check = new_polygon.edges[edge_i];
-        let found  = false;
-        for (let edg_i = 0; edg_i < open_edges.length; edg_i += 1) {
-            if (same_edge(edge_to_check, open_edges[edg_i])) {
-                if (open_edges[edg_i].polygon2 == undefined) open_edges[edg_i].polygon2 = new_polygon;
-                else open_edges[edg_i].polygon1 = new_polygon;
-                new_polygon.edges[edge_i] = open_edges[edg_i];
-                open_edges.splice(edg_i, 1);
-                found = true;
-                break;
-            }
-        }
-        
-        if (!found) {
-            open_edges.push(edge_to_check);
-            edges.push(edge_to_check);
-        }
-    }
-    */
-    
-    //polygons.push(new_polygon);
     candidate_polygon = new_polygon;
     console.log("Success!");
     return true;
@@ -904,8 +826,6 @@ function mouse_up(x: number, y: number): void {
                     polygons.push(candidate_polygon);
                     candidate_polygon = undefined;
                 }
-                // let result = add_polygon(closest_edge, current_template);
-                // if (result) closest_edge = undefined;
             }
             
             if (hovered_polygon != undefined) {
