@@ -84,11 +84,6 @@ let closest_edge: Edge = undefined;
 let base_polygon: Polygon = undefined;
 let to_add_type = 3;
 
-let debug_edge_1: Vector[] = undefined;
-let debug_edge_2: Vector[] = undefined;
-let debug_edge_3: Vector[] = undefined;
-
-
 let triangle_template: Polygon_Template = {vertices: [{x: 0, y: 0}, {x: 0.5, y: Math.sqrt(3)/2}, {x: 1, y: 0}]};
 
 let square_template: Polygon_Template = {vertices: [{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 1, y: 0}]};
@@ -139,11 +134,71 @@ let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}};
 let test_transform_edge_1: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}};
 let test_transform_edge_2: Edge = {v1: {x: 4, y: 3}, v2: {x: 2, y: 4}};
 
+let debug_edge_1: Vector[] = undefined;
+let debug_edge_2: Vector[] = undefined;
+let debug_edge_3: Vector[] = undefined;
+
 let candidate_polygon: Polygon = undefined;
 let candidate_edge_i: number = undefined;
 
 function step() {
     render();
+}
+
+function draw_polygon(polygon: Polygon, color: string, alpha: number): void {
+    main_context.strokeStyle = "black";
+	main_context.fillStyle = color;
+    main_context.globalAlpha = alpha;
+    
+    main_context.beginPath();
+    
+    // Move to the last vertex of the polygon
+    let last_vx = polygon.vertices[polygon.vertices.length - 1];
+    let last_vx_canvas = world_to_canvas(last_vx);
+    main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
+    
+    // Looping over vertices, drawing the edge to each vertex.
+    for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
+        let vx_c = world_to_canvas(polygon.vertices[vx_i]);
+        main_context.lineTo(vx_c.x, vx_c.y);
+    }
+    
+    main_context.fill();
+    main_context.stroke();
+    
+    /*
+// Visualizing and labeling the center of the polygon.
+    main_context.fillStyle = "orange";
+    // main_context.beginPath();
+    let canv_v = world_to_canvas(polygon.center);
+    main_context.font = '10px serif';
+    main_context.fillText(polygon_i.toString(), canv_v.x, canv_v.y);
+    // main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
+    // main_context.fill();
+    main_context.fillStyle = "green";
+    */
+    main_context.globalAlpha = 1;
+}
+
+function draw_edge(edge: Edge, color: string) {
+    // Drawing the edge closest to the mouse
+    main_context.strokeStyle = color;
+    
+    main_context.beginPath();
+    let vx_1c = world_to_canvas(edge.v1);
+    let vx_2c = world_to_canvas(edge.v2);
+    
+    main_context.moveTo(vx_1c.x, vx_1c.y);
+    main_context.lineTo(vx_2c.x, vx_2c.y);
+    main_context.stroke();
+}
+
+function draw_point(point: Vector, color: string) {
+    main_context.fillStyle = color;
+    main_context.beginPath();
+    let canv_v = world_to_canvas(point);
+    main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
+    main_context.fill();
 }
 
 function render() {
@@ -166,153 +221,28 @@ function render() {
 	main_context.globalAlpha = 1;
 	main_context.lineWidth = 2;
 	
-	// Preparing the canvas for drawing polygons
-	main_context.strokeStyle = "black";
-	main_context.fillStyle = "green";
-    
 	// Drawing polygons
 	for (let polygon_i = 0; polygon_i < polygons.length; polygon_i += 1) {
 		let polygon = polygons[polygon_i];
-        
-		main_context.beginPath();
-        
-		// Move to the last vertex of the polygon
-		let last_vx = polygon.vertices[polygon.vertices.length - 1];
-		let last_vx_canvas = world_to_canvas(last_vx);
-		main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
-        
-		// Looping over vertices, drawing the edge to each vertex.
-		for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
-			let vx_c = world_to_canvas(polygon.vertices[vx_i]);
-			main_context.lineTo(vx_c.x, vx_c.y);
-		}
-        
-		main_context.fill();
-		main_context.stroke();
-        
-        /*
-// Visualizing and labeling the center of the polygon.
-        main_context.fillStyle = "orange";
-        // main_context.beginPath();
-        let canv_v = world_to_canvas(polygon.center);
-        main_context.font = '10px serif';
-        main_context.fillText(polygon_i.toString(), canv_v.x, canv_v.y);
-        // main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
-        // main_context.fill();
-        main_context.fillStyle = "green";
-        */
+        draw_polygon(polygon, "green", 1);
     }
 	
-	// Drawing the candidate polygon
-    if (candidate_polygon != undefined) {
-        main_context.globalAlpha = 0.5;
-        main_context.beginPath();
-        
-        // Move to the last vertex of the polygon
-        let last_vx = candidate_polygon.vertices[candidate_polygon.vertices.length - 1];
-        let last_vx_canvas = world_to_canvas(last_vx);
-        main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
-        
-        // Looping over vertices, drawing the edge to each vertex.
-        for (let vx_i = 0; vx_i < candidate_polygon.vertices.length; vx_i += 1) {
-            let vx_c = world_to_canvas(candidate_polygon.vertices[vx_i]);
-            main_context.lineTo(vx_c.x, vx_c.y);
-        }
-        
-        main_context.fill();
-        main_context.stroke();
-        main_context.globalAlpha = 1;
-    }
+    if (candidate_polygon != undefined) draw_polygon(candidate_polygon, "green", 0.5);
+    if (hovered_polygon != undefined) draw_polygon(hovered_polygon, "red", 1);
+	
+	if (closest_edge != undefined) draw_edge(closest_edge, "cyan");
+    if (hovered_edge != undefined) draw_edge(hovered_edge, "yellow");
     
-    /*
-	// Drawing an edge for testing the inner side test
-	main_context.strokeStyle = "blue";
-    
-	main_context.beginPath();
-    let vx_1c = world_to_canvas(test_inner_side_edge.v1);
-    let vx_2c = world_to_canvas(test_inner_side_edge.v2);
-    
-	main_context.moveTo(vx_1c.x, vx_1c.y);
-	main_context.lineTo(vx_2c.x, vx_2c.y);
-	main_context.stroke();
-    */
-    
-    /*
-	// Drawing edges for testing linear transform
-	main_context.strokeStyle = "blue";
-    
-	main_context.beginPath();
-    vx_1c = world_to_canvas(test_transform_edge_1.v1);
-    vx_2c = world_to_canvas(test_transform_edge_1.v2);
-    
-	main_context.moveTo(vx_1c.x, vx_1c.y);
-	main_context.lineTo(vx_2c.x, vx_2c.y);
-	main_context.stroke();
-    
-	main_context.strokeStyle = "red";
-    
-	main_context.beginPath();
-    vx_1c = world_to_canvas(test_transform_edge_2.v1);
-    vx_2c = world_to_canvas(test_transform_edge_2.v2);
-    
-	main_context.moveTo(vx_1c.x, vx_1c.y);
-	main_context.lineTo(vx_2c.x, vx_2c.y);
-	main_context.stroke();
-    */
-    
+    if (hovered_vertex != undefined) draw_point(hovered_vertex, "yellow");
+    if (selected_vertex != undefined) draw_point(selected_vertex, "yellow");
     
 	// Visualizing the mouse position.
-    if (point_is_on_line(test_inner_side_edge.v1, test_inner_side_edge.v2, mouse_world_coord)) main_context.fillStyle = "red";
-    else main_context.fillStyle = "blue";
-    //main_context.fillStyle = "red";
-    main_context.beginPath();
-	let mouse_canvas_coord = world_to_canvas(mouse_world_coord);
-	main_context.arc(mouse_canvas_coord.x, mouse_canvas_coord.y, 5, 0, 2 * Math.PI);
-	main_context.fill();
+    if (point_is_on_line(test_inner_side_edge.v1, test_inner_side_edge.v2, mouse_world_coord)) draw_point(mouse_world_coord, "red");
+    else draw_point(mouse_world_coord, "blue");
+    //draw_point(mouse_world_coord, "red");
     
-    
-	if (hovered_polygon != undefined) {
-        main_context.fillStyle = "red";
-		main_context.beginPath();
-        
-		// Move to the last vertex of the polygon
-		let last_vx = hovered_polygon.vertices[hovered_polygon.vertices.length - 1];
-		let last_vx_canvas = world_to_canvas(last_vx);
-		main_context.moveTo(last_vx_canvas.x, last_vx_canvas.y);
-        
-		// Looping over vertices, drawing the edge to each vertex.
-		for (let vx_i = 0; vx_i < hovered_polygon.vertices.length; vx_i += 1) {
-			let vx_c = world_to_canvas(hovered_polygon.vertices[vx_i]);
-			main_context.lineTo(vx_c.x, vx_c.y);
-		}
-        
-		main_context.fill();
-	}
-	
-	if (closest_edge != undefined) {
-        // Drawing the edge closest to the mouse
-        main_context.strokeStyle = "cyan";
-        
-        main_context.beginPath();
-        let vx_1c = world_to_canvas(closest_edge.v1);
-        let vx_2c = world_to_canvas(closest_edge.v2);
-        
-        main_context.moveTo(vx_1c.x, vx_1c.y);
-        main_context.lineTo(vx_2c.x, vx_2c.y);
-        main_context.stroke();
-    }
-    
-	if (hovered_edge != undefined) {
-        main_context.strokeStyle = "yellow";
-        
-        main_context.beginPath();
-        let vx_1c = world_to_canvas(hovered_edge.v1);
-        let vx_2c = world_to_canvas(hovered_edge.v2);
-        
-        main_context.moveTo(vx_1c.x, vx_1c.y);
-        main_context.lineTo(vx_2c.x, vx_2c.y);
-        main_context.stroke();
-    }
+    // Visualizing the line by which the polygons will be cut.
+    if (hovered_vertex != undefined && selected_vertex != undefined) draw_edge({v1: hovered_vertex, v2: selected_vertex}, "blue");
     
     /*
 // Vertex labels for debugging
@@ -365,34 +295,42 @@ function render() {
     }
     */
     
-    // Visualizing the hovered vertex
-    if (hovered_vertex != undefined) {
-        main_context.fillStyle = "yellow";
-        main_context.beginPath();
-        let canv_v = world_to_canvas(hovered_vertex);
-        main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
-        main_context.fill();
-    }
+    /*
+	// Drawing an edge for testing the inner side test
+	main_context.strokeStyle = "blue";
     
-    // Visualizing the selected vertex
-    if (selected_vertex != undefined) {
-        main_context.fillStyle = "yellow";
-        main_context.beginPath();
-        let canv_v = world_to_canvas(selected_vertex);
-        main_context.arc(canv_v.x, canv_v.y, 5, 0, 2 * Math.PI);
-        main_context.fill();
-    }
+	main_context.beginPath();
+    let vx_1c = world_to_canvas(test_inner_side_edge.v1);
+    let vx_2c = world_to_canvas(test_inner_side_edge.v2);
     
-    // Visualizing the line by which the polygons will be cut.
-    if (hovered_vertex != undefined && selected_vertex != undefined) {
-        main_context.strokeStyle = "blue";
-        let selected_c = world_to_canvas(selected_vertex);
-        let hovered_c = world_to_canvas(hovered_vertex);
-        main_context.beginPath();
-        main_context.moveTo(selected_c.x, selected_c.y);
-        main_context.lineTo(hovered_c.x, hovered_c.y);
-        main_context.stroke();
-    }
+	main_context.moveTo(vx_1c.x, vx_1c.y);
+	main_context.lineTo(vx_2c.x, vx_2c.y);
+	main_context.stroke();
+    */
+    
+    /*
+	// Drawing edges for testing linear transform
+	main_context.strokeStyle = "blue";
+    
+	main_context.beginPath();
+    vx_1c = world_to_canvas(test_transform_edge_1.v1);
+    vx_2c = world_to_canvas(test_transform_edge_1.v2);
+    
+	main_context.moveTo(vx_1c.x, vx_1c.y);
+	main_context.lineTo(vx_2c.x, vx_2c.y);
+	main_context.stroke();
+    
+	main_context.strokeStyle = "red";
+    
+	main_context.beginPath();
+    vx_1c = world_to_canvas(test_transform_edge_2.v1);
+    vx_2c = world_to_canvas(test_transform_edge_2.v2);
+    
+	main_context.moveTo(vx_1c.x, vx_1c.y);
+	main_context.lineTo(vx_2c.x, vx_2c.y);
+	main_context.stroke();
+    */
+    
 }
 
 function canvas_to_world(canvas_point: Vector): Vector {
