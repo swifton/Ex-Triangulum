@@ -119,7 +119,30 @@ let octagon_template: Polygon_Template = {vertices: [{x: 0, y: 0},
                                                      {x: 1 + Math.sqrt(2) / 2, y: -Math.sqrt(2) / 2}, 
                                                      {x: Math.sqrt(2) / 2, y: -Math.sqrt(2) / 2}]};
 
-let templates = [triangle_template, square_template, hexagon_template, octagon_template];
+let prism_template: Polygon_Template = {vertices: [{x: 0, y: 0}, 
+                                                   {x: 0.5, y: Math.sqrt(3)/2}, 
+                                                   {x: 1.5, y: Math.sqrt(3)/2}, 
+                                                   {x: 2, y: 0}]};
+
+let rhombus_template: Polygon_Template = {vertices: [{x: 0, y: 0}, {x: 0.5, y: Math.sqrt(3)/2}, {x: 1.5, y: Math.sqrt(3)/2}, {x: 1, y: 0}]};
+
+let antitriangle_template: Polygon_Template = {vertices: [{x: 0, y: 0}, 
+                                                          {x: 0.5, y: Math.sqrt(3)/2}, 
+                                                          {x: 1.5, y: Math.sqrt(3)/2}, 
+                                                          {x: 2, y: 0}, 
+                                                          {x: 1.5, y: -Math.sqrt(3)/2},
+                                                          {x: 1, y: 0}, 
+                                                          {x: 0.5, y: -Math.sqrt(3)/2}]};
+
+let antirhombus_template: Polygon_Template = {vertices: [{x: 0, y: 0}, 
+                                                         {x: 0.5, y: Math.sqrt(3)/2}, 
+                                                         {x: 1.5, y: Math.sqrt(3)/2}, 
+                                                         {x: 2, y: 0}, 
+                                                         {x: 1.5, y: -Math.sqrt(3)/2},
+                                                         {x: 1, y: 0}]};
+
+//let templates = [triangle_template, square_template, hexagon_template, octagon_template];
+let templates = [triangle_template, hexagon_template, rhombus_template, prism_template, antirhombus_template];
 let current_template: Polygon_Template = triangle_template;
 
 
@@ -461,24 +484,17 @@ function world_to_canvas(world_point: Vector): Vector {
 }
 
 function create_foam() {
-    let first_polygon = new Polygon([{x: 0, y: 0}, {x: 0, y: 1}, {x: 1, y: 1}, {x: 1, y: 0}]);
-    polygons = [first_polygon];
+    polygons = [];
     add_polygon(first_edge, triangle_template);
     
     open_edges = [];
-    let edge_i;
-    for (edge_i = 0; edge_i < first_polygon.edges.length; edge_i += 1) {
-        open_edges.push(first_polygon.edges[edge_i]);
-        edges.push(first_polygon.edges[edge_i]);
-    }
-    
-    last_edge = first_polygon.edges[0];
+    //last_edge = first_polygon.edges[0];
     
     for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
         let polygon_i = random_integer(0, polygons.length);
         let polygon = polygons[polygon_i].vertices;
         let vx_i = random_integer(0, polygon.length);
-        edge_i = random_integer(0, open_edges.length);
+        // edge_i = random_integer(0, open_edges.length);
         // last_edge = new edge(open_edges[edge_i].v1, open_edges[edge_i].v2, undefined);
         let edge: Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length], polygon1: polygons[polygon_i], polygon2: undefined};
         //add_polygon(open_edges[edge_i], templates[random_integer(0, templates.length)]);
@@ -1142,5 +1158,5 @@ function mouse_scroll(direction: number): void {
 }
 
 let first_edge: Edge = {v1: {x: 0, y: 0}, v2: {x: 1, y: 0}, polygon1: undefined, polygon2: undefined};
-//create_foam();
-add_polygon(first_edge, triangle_template);
+create_foam();
+//add_polygon(first_edge, triangle_template);
