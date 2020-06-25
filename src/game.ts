@@ -137,6 +137,18 @@ function step() {
     render();
 }
 
+function canvas_to_world(canvas_point: Vector): Vector {
+    let wx: number = (canvas_point.x - canvas_center[0]) / unit_pix;
+    let wy: number = (canvas_point.y - canvas_center[1]) / unit_pix;
+    return {x: wx, y: wy};
+}
+
+function world_to_canvas(world_point: Vector): Vector {
+    let cx: number = world_point.x * unit_pix + canvas_center[0];
+    let cy: number = world_point.y * unit_pix + canvas_center[1];
+    return {x: cx, y: cy};
+}
+
 function draw_polygon(polygon: Polygon, color: string, alpha: number): void {
     main_context.strokeStyle = "black";
 	main_context.fillStyle = color;
@@ -236,29 +248,43 @@ function render() {
     if (hovered_vertex != undefined && selected_vertex != undefined) draw_edge({v1: hovered_vertex, v2: selected_vertex}, "blue");
 }
 
-function canvas_to_world(canvas_point: Vector): Vector {
-    let wx: number = (canvas_point.x - canvas_center[0]) / unit_pix;
-    let wy: number = (canvas_point.y - canvas_center[1]) / unit_pix;
-    return {x: wx, y: wy};
+function same_vertex(vertex_1: Vector, vertex_2: Vector): boolean {
+    let threshold = 0.01;
+    if (manhattan(vertex_1, vertex_2) < threshold) return true;
+    return false;
 }
 
-function world_to_canvas(world_point: Vector): Vector {
-    let cx: number = world_point.x * unit_pix + canvas_center[0];
-    let cy: number = world_point.y * unit_pix + canvas_center[1];
-    return {x: cx, y: cy};
+// The Manhattan distance between two points.
+function manhattan(pt1: Vector, pt2: Vector): number {
+    return Math.abs(pt1.x - pt2.x) + Math.abs(pt1.y - pt2.y);
 }
 
-function create_foam() {
-    polygons = [];
-    add_polygon(first_edge, undefined, triangle_template);
+function same_edge(edge_1: Edge, edge_2: Edge): boolean {
+    let threshold = 0.01;
     
-    for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
-        let polygon_i = random_integer(0, polygons.length);
-        let polygon = polygons[polygon_i].vertices;
-        let vx_i = random_integer(0, polygon.length);
-        let edge: Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length]};
-        add_polygon(edge, polygons[polygon_i], templates[random_integer(0, templates.length)]);
-    }
+    if (manhattan(edge_1.v1, edge_2.v1) < threshold && manhattan(edge_1.v2, edge_2.v2) < threshold) return true;
+    if (manhattan(edge_1.v1, edge_2.v2) < threshold && manhattan(edge_1.v2, edge_2.v1) < threshold) return true;
+    return false;
+}
+
+function edges_intersect(edge_1: Edge, edge_2: Edge): boolean {
+    let x1 = edge_1.v1.x;
+    let y1 = edge_1.v1.y;
+    let x2 = edge_1.v2.x;
+    let y2 = edge_1.v2.y;
+    
+    let x3 = edge_2.v1.x;
+    let y3 = edge_2.v1.y;
+    let x4 = edge_2.v2.x;
+    let y4 = edge_2.v2.y;
+    
+    let side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1);
+    let side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1);
+    
+    let side3 = (x1 - x3) * (y3 - y4) - (x3 - x4) * (y1 - y3);
+    let side4 = (x2 - x3) * (y3 - y4) - (x3 - x4) * (y2 - y3);
+    
+    return side1 * side2 < 0 && side3 * side4 < 0;
 }
 
 // Find a linear transformation that transforms edge_1 into edge_2
@@ -427,63 +453,17 @@ function add_polygon(edge: Edge, base: Polygon, p_template: Polygon_Template) {
     }
 }
 
-function same_vertex(vertex_1: Vector, vertex_2: Vector): boolean {
-    let threshold = 0.01;
-    if (manhattan(vertex_1, vertex_2) < threshold) return true;
-    return false;
-}
-
-// The Manhattan distance between two points.
-function manhattan(pt1: Vector, pt2: Vector): number {
-    return Math.abs(pt1.x - pt2.x) + Math.abs(pt1.y - pt2.y);
-}
-
-function same_edge(edge_1: Edge, edge_2: Edge): boolean {
-    let threshold = 0.01;
+function create_foam() {
+    polygons = [];
+    add_polygon(first_edge, undefined, triangle_template);
     
-    if (manhattan(edge_1.v1, edge_2.v1) < threshold && manhattan(edge_1.v2, edge_2.v2) < threshold) return true;
-    if (manhattan(edge_1.v1, edge_2.v2) < threshold && manhattan(edge_1.v2, edge_2.v1) < threshold) return true;
-    return false;
-}
-
-function edges_intersect(edge_1: Edge, edge_2: Edge): boolean {
-    let x1 = edge_1.v1.x;
-    let y1 = edge_1.v1.y;
-    let x2 = edge_1.v2.x;
-    let y2 = edge_1.v2.y;
-    
-    let x3 = edge_2.v1.x;
-    let y3 = edge_2.v1.y;
-    let x4 = edge_2.v2.x;
-    let y4 = edge_2.v2.y;
-    
-    let side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1);
-    let side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1);
-    
-    let side3 = (x1 - x3) * (y3 - y4) - (x3 - x4) * (y1 - y3);
-    let side4 = (x2 - x3) * (y3 - y4) - (x3 - x4) * (y2 - y3);
-    
-    return side1 * side2 < 0 && side3 * side4 < 0;
-}
-
-function segments_intersect(v1: Vector, v2: Vector, v3: Vector, v4: Vector): boolean {
-    let x1 = v1.x;
-    let y1 = v1.y;
-    let x2 = v2.x;
-    let y2 = v2.y;
-    
-    let x3 = v3.x;
-    let y3 = v3.y;
-    let x4 = v4.x;
-    let y4 = v4.y;
-    
-    let side1 = (x3 - x1) * (y1 - y2) - (x1 - x2) * (y3 - y1);
-    let side2 = (x4 - x1) * (y1 - y2) - (x1 - x2) * (y4 - y1);
-    
-    let side3 = (x1 - x3) * (y3 - y4) - (x3 - x4) * (y1 - y3);
-    let side4 = (x2 - x3) * (y3 - y4) - (x3 - x4) * (y2 - y3);
-    
-    return side1 * side2 < 0 && side3 * side4 < 0;
+    for (let polygon_i = 0; polygon_i < 1000; polygon_i += 1) {
+        let polygon_i = random_integer(0, polygons.length);
+        let polygon = polygons[polygon_i].vertices;
+        let vx_i = random_integer(0, polygon.length);
+        let edge: Edge = {v1: polygon[vx_i], v2: polygon[(vx_i + 1) % polygon.length]};
+        add_polygon(edge, polygons[polygon_i], templates[random_integer(0, templates.length)]);
+    }
 }
 
 function mouse_down(x: number, y: number): void {
@@ -557,14 +537,14 @@ function cut_polygons(): void {
             let vx2 = polygon.vertices[vx2_i];
             let vx3 = polygon.vertices[(vx_i + 2) % polygon.vertices.length];
             
-            if (point_is_on_line(v1, v2, vx2) && segments_intersect(v1, v2, vx1, vx3)) {
+            if (point_is_on_line(v1, v2, vx2) && edges_intersect({v1: v1, v2: v2}, {v1: vx1, v2: vx3})) {
                 // The line enters or exits the polygon through a vertex.
                 if (!point_is_on_line(v1, v2, vx1)) ends.push([vx2_i, undefined]);
                 if (!point_is_on_line(v1, v2, vx3)) starts.push([vx2_i, undefined]);
             } else {
                 // The line enters or exits the polygon through an edge.
                 if (!point_is_on_line(v1, v2, vx1)) {
-                    if (segments_intersect(v1, v2, vx1, vx2)) {
+                    if (edges_intersect({v1: v1, v2: v2}, {v1: vx1, v2: vx2})) {
                         let intersection = segment_intersection(v1, v2, vx1, vx2);
                         starts.push([vx2_i, intersection]);
                         ends.push([vx_i, intersection]);
