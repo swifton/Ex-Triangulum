@@ -23,6 +23,10 @@ function sum(vec_1: Vector, vec_2: Vector): Vector {
 	return {x: vec_1.x + vec_2.x, y: vec_1.y + vec_2.y};
 }
 
+function sub(vec_1: Vector, vec_2: Vector): Vector {
+	return {x: vec_1.x - vec_2.x, y: vec_1.y - vec_2.y};
+}
+
 function dot(vec_1: Vector, vec_2: Vector): number {
     return vec_1.x * vec_2.x + vec_1.y * vec_2.y;
 }
@@ -754,9 +758,9 @@ function point_is_on_line(vertex1: Vector, vertex2: Vector, point: Vector): bool
 function segment_intersection(v1: Vector, v2: Vector, v3: Vector, v4: Vector): Vector {
     let threshold = 0.01;
     // Making a system of linear equations for alpha and beta -- parameters that parameterize the lines.
-    let w1 = sum(v3, mul(v4, -1));
-    let w2 = sum(v2, mul(v1, -1));
-    let w3 = sum(v2, mul(v4, -1));
+    let w1 = sub(v3, v4);
+    let w2 = sub(v2,v1);
+    let w3 = sub(v2,v4);
     
     let determinant = w1.x * w2.y - w1.y * w2.x;
     // Degenerate cases -- parallel segments and segments on the same line.
@@ -777,7 +781,7 @@ function segment_intersection(v1: Vector, v2: Vector, v3: Vector, v4: Vector): V
 function cut_polygons(): void {
     let v1 = hovered_vertex;
     let v2 = selected_vertex;
-    let w1 = sum(v1, mul(v2, -1));
+    let w1 = sub(v1, v2);
     
     // Array of polygons that we will add.
     let polygons_vxs: Vector[][] = [];
@@ -970,14 +974,14 @@ function euclid(p1: Vector, p2: Vector):number {
 
 // Assumes that v1 and v2 are different.
 function distance_to_segment(v1: Vector, v2: Vector, p: Vector): number {
-    let dir = sum(v2, mul(v1, -1));
+    let dir = sub(v2, v1);
     dir = mul(dir, 1/euclid(v1, v2));
-    let to_project = sum(p, mul(v1, -1));
+    let to_project = sub(p, v1);
     
     // Make sure we don't go outside of the segment.
     let alpha = Math.max(0, Math.min(1, dot(dir, to_project)));
     let parallel = mul(dir, alpha);
-    let perp = sum(to_project, mul(parallel, -1));
+    let perp = sub(to_project, parallel);
     return Math.sqrt(Math.pow(perp.x, 2) + Math.pow(perp.y, 2));
 }
 
