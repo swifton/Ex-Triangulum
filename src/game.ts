@@ -336,11 +336,8 @@ function create_candidate_polygon(edge: Edge, base: Polygon, p_template: Polygon
     }
     
     let threshold = 0.01;
-    let starting_v1: Vector;
-    let starting_v2: Vector;
-    
-    starting_v1 = edge.v1;
-    starting_v2 = edge.v2;
+    let starting_v1 = edge.v1;
+    let starting_v2 = edge.v2;
     
     for (var polygon of polygons) {
         for (let vx_i = 0; vx_i < polygon.vertices.length; vx_i += 1) {
