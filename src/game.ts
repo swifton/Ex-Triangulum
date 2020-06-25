@@ -5,7 +5,6 @@
 // 4. It looks like you can hover over an edge while being outside it on the line.
 // 5. Zoom to the cursor like google maps.
 
-
 function random_integer(min: number, max: number): number { // Including min, excluding max
 	return (min + Math.floor(Math.random() * (max - min)));
 }
@@ -62,10 +61,8 @@ class Polygon {
 	}
 }
 
-interface Vertex {
-	v: Vector;
-	angle: number; // The multiple of 15 degrees
-}
+let main_canvas = <HTMLCanvasElement> document.getElementById('canvas');
+let main_context = main_canvas.getContext('2d');
 
 let unit_pix: number = 200;
 let canvas_center = [0, 0];
@@ -142,7 +139,6 @@ let antirhombus_template: Polygon_Template = {vertices: [{x: 0, y: 0},
 let templates = [triangle_template, hexagon_template, rhombus_template, prism_template, antirhombus_template];
 let current_template: Polygon_Template = triangle_template;
 
-
 let test_inner_side_edge: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}};
 let test_transform_edge_1: Edge = {v1: {x: 5, y: 5}, v2: {x: 6, y: 6}};
 let test_transform_edge_2: Edge = {v1: {x: 4, y: 3}, v2: {x: 2, y: 4}};
@@ -151,9 +147,18 @@ let candidate_polygon: Polygon = undefined;
 let candidate_edge_i: number = undefined;
 
 function step() {
-	resize_canvas();
-	clear_canvas();
-	render();
+    // Resizing the canvas to fit the whole window.
+	main_canvas.width = window.innerWidth;
+    main_canvas.height = window.innerHeight;
+    // Clearing the canvas.
+	main_context.fillStyle = '#333333';
+    main_context.clearRect(0, 0, main_canvas.width, main_canvas.height);
+    main_context.beginPath();
+    main_context.rect(0, 0, main_canvas.width, main_canvas.height);
+    main_context.closePath();
+    main_context.fill();
+    
+    render();
 }
 
 function render() {
